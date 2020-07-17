@@ -1,4 +1,5 @@
 let apiUrl='https://app.gobizgrow.com/api/'
+let webUrl='https://app.gobizgrow.com/'
 export default constants = { 
 	                           'LOGIN_API':apiUrl+'login',
                                'INDUSTRIES_API':apiUrl+'industries',
@@ -7,12 +8,21 @@ export default constants = {
                                'ALL_CUSTOMERS_API':apiUrl+'customers/all',
                                
 
+
+                               'GET_NEXT_ESTIMATE_API_ID':apiUrl+'get-estimate-unique_id',
+                               'GET_NEXT_INVOICE_API_ID':apiUrl+'get-invoice-unique_id',
+                               'GET_NEXT_PAYMENT_ID_API':apiUrl+'get-payment-unique_id',
+
+
+                               
                                'ALL_ITEMS_API':apiUrl+'items/all',
                                'ALL_UNITS_API':apiUrl+'units/all',
                                'ALL_CATEGORIES_API':apiUrl+'categories/all',
                                'ALL_INVOICES_API':apiUrl+'invoices/all',
                                'ALL_INVOICES_DRAFT_API':apiUrl+'invoices/draft',
                                'ALL_INVOICES_DUE_API':apiUrl+'invoices/due',
+                               
+                               'ALL_PAYMENT_METHODS_API':apiUrl+'payment-methods/all',
 
 
                                'ALL_ESTIMATES_API':apiUrl+'estimates/all',
@@ -45,8 +55,8 @@ export default constants = {
                                'ADD_ITEM_API':apiUrl+'items/add',
                                'ADD_PAYMENT_API':apiUrl+'payments/add',
                                'ADD_ESTIMATE_API':apiUrl+'estimates/add',
-
-                               
+                               'ADD_INVOICE_API':apiUrl+'invoices/add',
+                                
                                'UPDATE_INVOICE_API':apiUrl+'invoices/edit',
 
 
@@ -60,6 +70,28 @@ export default constants = {
                                'UPDATE_PAYMENT_API':apiUrl+'payments/edit',
                                'UPDATE_ESTIMATE_API':apiUrl+'estimates/edit',
                                'UPLOADS':apiUrl+'uploads',
+                               'DELETE_ESTIMATE_API':apiUrl+'estimates/delete',
+
+
+                               'VIEW_ESTIMATE_API':webUrl+'estimate-pdf/',
+                               'VIEW_INVOICE_API':webUrl+'invoice-pdf/',
+
+
+                              'CONVERT_TO_INVOICE_API':apiUrl+'estimates/convert-to-invoice/',
+                              'MARK_AS_SENT_API':apiUrl+'estimates/mark-as-sent/',
+                              'SEND_ESTIMATE_API':apiUrl+'estimates/send-estimate/',
+                              'MARK_AS_ACCEPTED_API':apiUrl+'estimates/mark-as-accepted/',
+                              'MARK_AS_REJECTED_API':apiUrl+'estimates/mark-as-rejected/',
+                              'DELETE_ESTIMATE_API':apiUrl+'estimates/delete/',
+
+
+
+                              'DELETE_INVOICE_API':apiUrl+'invoices/delete/',
+                              'CLONE_INVOICE_API':apiUrl+'invoices/clone/',
+                              'MARK_AS_SENT_INVOICE_API':apiUrl+'invoices/mark-as-sent/',
+                              'SEND_INVOICE_API':apiUrl+'invoices/send-invoice/',
+
+
 
 
 

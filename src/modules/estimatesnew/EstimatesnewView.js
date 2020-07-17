@@ -34,6 +34,8 @@ import { SET_USER_INFO } from '../AppState';
 import { colors, fonts } from '../../styles';
 const saveIcon = require('../../../assets/images/save.png');
 import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN,SET_EDIT_DATA} from '../AppState';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
   
  let uri='';
  let uploadUrl='';
@@ -116,22 +118,54 @@ console.log(date);
        var customers=  await this.getCustomers();
        this.setState({ customers:customers })
        this.setState({company_id:this.props.userInfo.company_id})
+       var estimate_number=  await this.getEstimateUniqueId();
+        this.setState({ estimate_number:estimate_number })
+
+
+
    }
 
   async  getCustomers() {
-    console.log(CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
-          try {
-            let response = await fetch(
-              CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
-            );
-             let json = await response.json();
-                                      return json.data;
-          } catch (error) {
-            console.error(error);
-          }
-     }
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      console.log(CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
+      try {
+        let response = await fetch(
+          CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
+        );
+          let json = await response.json();
+          return json.data;
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+      return [];
+    }
+    
+  }
     
 
+async getEstimateUniqueId(){
+      let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      console.log('ABCTEST'+CONSTANTS.GET_NEXT_ESTIMATE_API_ID+'/?company_id='+this.props.userInfo.company_id);
+      try {
+        let response = await fetch(
+          CONSTANTS.GET_NEXT_ESTIMATE_API_ID+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
+        );
+          let json = await response.json();
+                                  return json.data;
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+      return [];
+    }
+}
   isDecimalNumber(number){
        const re = /^[0-9]*\.?[0-9]*$/;
        if (number !== '' && re.test(number)) {
@@ -208,40 +242,46 @@ setDiscountType(discount_type){
 }
 
   async  addEstimateApiCall() {
-        try {
-          console.log(this.state);
-           formData = new FormData();
-           formData.append('estimate_date',this.state.estimate_date); 
-           formData.append('due_date',this.state.due_date); 
-           formData.append('estimate_number',this.state.estimate_number); 
-           formData.append('sub_total',this.state.sub_total);
-           formData.append('discount',this.state.discount);
-           formData.append('discount_type',this.state.discount_type);
-           formData.append('total',this.state.total);
-           formData.append('items', JSON.stringify(this.state.ItemInInvoice));
-           formData.append('company_id',this.state.company_id); 
-           formData.append('discount_val',this.state.discount_val); 
-           formData.append('notes',this.state.notes); 
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+         formData = new FormData();
+         formData.append('estimate_date',this.state.estimate_date); 
+         formData.append('due_date',this.state.due_date); 
+         formData.append('estimate_number',this.state.estimate_number); 
+         formData.append('sub_total',this.state.sub_total);
+         formData.append('discount',this.state.discount);
+         formData.append('discount_type',this.state.discount_type);
+         formData.append('total',this.state.total);
+         formData.append('items', JSON.stringify(this.state.ItemInInvoice));
+         formData.append('company_id',this.state.company_id); 
+         formData.append('discount_val',this.state.discount_val); 
+         formData.append('notes',this.state.notes); 
 
 
-           formData.append('customer_id',this.state.customer_id); 
+         formData.append('customer_id',this.state.customer_id); 
 
-           let response = await fetch(
-            CONSTANTS.ADD_ESTIMATE_API,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
-            }
-          );
-           let json = await response.json();
-            return json;
-        } catch (error) {
-          console.error(error);
-        }
+         let response = await fetch(
+          CONSTANTS.ADD_ESTIMATE_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+          return json;
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error);
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    }
+        
   }
 
 async selectCustomer(customer_id){ this.setState({customer_id:customer_id}) }
@@ -303,7 +343,7 @@ this.props.navigation.navigate('Select Item')
            var user=  await this.addEstimateApiCall();
            this.setState({isDisabled:false})
            console.log(user)
-           if(user.responseCode !=200){
+           if(user && user.responseCode !=200){
             var data=user.data
               var err='';
                   if (typeof data.estimate_date != "undefined" && typeof data.estimate_date[0] != "undefined") { err=err+' please pick estimate date ';}
@@ -336,7 +376,7 @@ this.props.navigation.navigate('Select Item')
                   this.AlertPro.open()
    
 
-            }else{
+            }else if(user) {
                this.props.pageRefersh('refresh');
                this.setState({
                     name:'',

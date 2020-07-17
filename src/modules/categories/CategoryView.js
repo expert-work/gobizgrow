@@ -20,6 +20,8 @@ import CONSTANTS from '../constants';
 import { connect } from 'react-redux';
 import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_EDIT_DATA } from '../AppState';
 import { colors, fonts } from '../../styles';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
 const nextIcon = require('../../../assets/images/next.png');
 
 
@@ -75,34 +77,50 @@ const nextIcon = require('../../../assets/images/next.png');
     if (!this.state.fetching_from_server && !this.state.isListEnd) {
       //On click of Load More button We will call the web API again
       this.setState({ fetching_from_server: true }, () => {
-        console.log(CONSTANTS.ALL_CATEGORIES_API+'?page=' + this.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
-        fetch(CONSTANTS.ALL_CATEGORIES_API+'?page=' + this.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
-          //Sending the currect offset with get request
-          .then(response => response.json())
-          .then(responseJson => {
-            if (responseJson.data.data.length > 0) {
-              //Successful response from the API Call
-              this.offset = this.offset + 1;
-              //After the response increasing the offset for the next API call.
-              this.setState({
-                serverData: [...this.state.serverData, ...responseJson.data.data],
-                //adding the new data with old one available
-                fetching_from_server: false,
-                //updating the loading state to false
+        NetInfo.fetch().then(state => {
+          if(state.isConnected) {
+            console.log(CONSTANTS.ALL_CATEGORIES_API+'?page=' + this.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
+            fetch(CONSTANTS.ALL_CATEGORIES_API+'?page=' + this.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
+              //Sending the currect offset with get request
+              .then(response => response.json())
+              .then(responseJson => {
+                if (responseJson.data.data.length > 0) {
+                  //Successful response from the API Call
+                  this.offset = this.offset + 1;
+                  //After the response increasing the offset for the next API call.
+                  this.setState({
+                    serverData: [...this.state.serverData, ...responseJson.data.data],
+                    //adding the new data with old one available
+                    fetching_from_server: false,
+                    //updating the loading state to false
+                  });
+                } else {
+                  this.setState({
+                    fetching_from_server: false,
+                    isListEnd: true,
+                  });
+                }
+              })
+              .catch(error => {
+                this.showErrorAlert(i18n.translations.server_connect_error);
               });
-            } else {
-              this.setState({
-                fetching_from_server: false,
-                isListEnd: true,
-              });
-            }
-          })
-          .catch(error => {
-            console.error(error);
-          });
+          } else {
+            this.showErrorAlert(i18n.translations.network_err_msg);
+          }
+        });
+        
       });
     }
   };
+
+  showErrorAlert = (message) => {
+    this.setState({
+      fetching_from_server: false,
+      isListEnd: true,
+    });
+    Alert.alert("", message)
+  }
+
   renderFooter() {
     return (
       <View style={styles.footer}>

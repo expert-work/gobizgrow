@@ -23,6 +23,8 @@ import AsyncStorage from '@react-native-community/async-storage';
 import { fonts, colors } from '../../styles';
 import { Text } from '../../components/StyledText';
 import { SET_USER_INFO } from '../AppState';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
 import { connect } from 'react-redux';
 var width = Dimensions.get('window').width; //full width
 var height = Dimensions.get('window').height; //full height
@@ -61,42 +63,55 @@ class SignupScreen extends React.Component {
     }
 
    async  getIndustries() {
-          try {
-            let response = await fetch(
-              CONSTANTS.INDUSTRIES_API,{method: 'POST'}
-            );
-             let json = await response.json();
-             return json.data;
-          } catch (error) {
-            console.error(error);
-          }
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        let response = await fetch(
+          CONSTANTS.INDUSTRIES_API,{method: 'POST'}
+        );
+         let json = await response.json();
+         return json.data;
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+      return [];
+    }
+          
      }
    
 
   async  registerUserApiCall() {
-        try {
-          console.log(this.state);
-          formData = new FormData();
-          formData.append('name',this.state.name);  
-          formData.append('password',this.state.password);  
-          formData.append('email',this.state.email);  
-          formData.append('industry',this.state.industry);  
-          let response = await fetch(
-            CONSTANTS.REGISTER_API,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
-            }
-          );
-           let json = await response.json();
-            return json;
-        } catch (error) {
-          console.error(error);
-        }
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+        formData = new FormData();
+        formData.append('name',this.state.name);  
+        formData.append('password',this.state.password);  
+        formData.append('email',this.state.email);  
+        formData.append('industry',this.state.industry);  
+        let response = await fetch(
+          CONSTANTS.REGISTER_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+          return json;
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error)
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    } 
   }
 
    
@@ -105,7 +120,7 @@ async registerUser(){
        this.setState({isDisabled:true})
        var user=  await this.registerUserApiCall();
        this.setState({isDisabled:false})
-       if(user.responseCode !=200){
+       if(user && user.responseCode !=200){
         var data=user.data
           var err='';
               if (typeof data.email != "undefined" && typeof data.email[0] != "undefined") { err=err+' '+data.email[0];}
@@ -117,7 +132,7 @@ async registerUser(){
                 notificationMessage:err
               })
               this.AlertPro.open()
-        }else{
+        }else if (user) {
           await this.loginSuccessfull(user.data);
        }
 }

@@ -10,17 +10,24 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  Image 
+  Image  
 } from 'react-native';
 //import all the components we are going to use.
 import CONSTANTS from '../constants';
+import AlertPro from "react-native-alert-pro";
 
  import SearchBar from 'react-native-search-bar';
 //import SearchBar from "react-native-dynamic-search-bar";
 import { connect } from 'react-redux';
-import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_EDIT_DATA,SET_ITEMS_INVOICES } from '../AppState';
+import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_EDIT_DATA,SET_ITEMS_INVOICES,BEFORE_PHOTOS,AFTER_PHOTOS,OTHER_PHOTOS,ACTIVE_PHOTO_TAB,UPDATE_PHOTO_DATA} from '../AppState';
 import { colors, fonts } from '../../styles';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
 const nextIcon = require('../../../assets/images/next.png');
+const eyeIcon = require('../../../assets/images/eye.png');
+const editIcon = require('../../../assets/images/edit.png');
+const crossIcon = require('../../../assets/images/cross.png');
+
 
 
  class InvoiceScreen extends Component {
@@ -31,6 +38,7 @@ const nextIcon = require('../../../assets/images/next.png');
       isListEnd: false,
       //Loading state used while loading the data for the first time
       serverData: [],
+      deleteItemId:'',
       //Data Source for the FlatList
       fetching_from_server: false,
       //Loading state used while loading more data
@@ -43,6 +51,13 @@ const nextIcon = require('../../../assets/images/next.png');
        this._unsubscribe = this.props.navigation.addListener('focus', () => {
                 this.props.setHeaderRightIconShow('Add Invoice');
                 this.props.setItemInvoices([]);
+                this.props.set_before_photos([]);
+                this.props.set_after_photos([]);
+                this.props.set_other_photos([]);
+                this.props.set_active_photo_tab('');
+                this.props.set_update_photo_data([]);
+              
+
                 if(this.props.isPageRefersh=='refresh'){
                   this.props.pageRefersh('');
                    this.refreshData();
@@ -72,15 +87,56 @@ const nextIcon = require('../../../assets/images/next.png');
                   price:item.price.toString(),
                   id:item.id,
                   quantity:item.quantity.toString(),
-                  description:'',
+                  description:item.notes,
               }
        ItemInInvoice.push(item)
     })
    this.props.setItemInvoices(ItemInInvoice);
-    // console.log(data);
-     this.props.editData(data);
+   this.props.setEditData(data);
 
-     this.props.navigation.navigate('Edit Invoice')
+    var before_photos=[]
+    var after_photos=[]
+    var other_photos=[]
+ 
+    data.before_photos.map((item, index) => {
+                  var item={
+                  unique_id:this.makeid(10),
+                  url:item.url,
+                  id:item.id,
+                  notes:item.notes,
+                  type:item.type,
+              }
+       before_photos.push(item)
+    })
+    data.after_photos.map((item, index) => {
+                  var item={
+                  unique_id:this.makeid(10),
+                  url:item.url,
+                  id:item.id,
+                  notes:item.notes,
+                  type:item.type,
+              }
+       after_photos.push(item)
+    })
+
+    data.other_photos.map((item, index) => {
+                  var item={
+                  unique_id:this.makeid(10),
+                  url:item.url,
+                  id:item.id,
+                  notes:item.notes,
+                  type:item.type,
+              }
+       other_photos.push(item)
+    })
+
+    this.props.set_before_photos(before_photos)
+    this.props.set_after_photos(after_photos)
+    this.props.set_other_photos(other_photos)
+
+
+
+   this.props.navigation.navigate('Edit Invoice')
     // Alert.alert(this.props.customerEditId)
   }
 
@@ -102,34 +158,50 @@ const nextIcon = require('../../../assets/images/next.png');
     if (!this.state.fetching_from_server && !this.state.isListEnd) {
       //On click of Load More button We will call the web API again
       this.setState({ fetching_from_server: true }, () => {
-        console.log(CONSTANTS.ALL_INVOICES_API+'?page=' + this.state.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
-        fetch(CONSTANTS.ALL_INVOICES_API+'?page=' + this.state.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
-          //Sending the currect offset with get request
-          .then(response => response.json())
-          .then(responseJson => {
-            if (responseJson.data.data.length > 0) {
-              //Successful response from the API Call
-              this.state.offset = this.state.offset + 1;
-              //After the response increasing the offset for the next API call.
-              this.setState({
-                serverData: [...this.state.serverData, ...responseJson.data.data],
-                //adding the new data with old one available
-                fetching_from_server: false,
-                //updating the loading state to false
+        NetInfo.fetch().then(state => {
+          if(state.isConnected) {
+            console.log(CONSTANTS.ALL_INVOICES_API+'?page=' + this.state.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
+            fetch(CONSTANTS.ALL_INVOICES_API+'?page=' + this.state.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
+              //Sending the currect offset with get request
+              .then(response => response.json())
+              .then(responseJson => {
+                if (responseJson.data.data.length > 0) {
+                  //Successful response from the API Call
+                  this.state.offset = this.state.offset + 1;
+                  //After the response increasing the offset for the next API call.
+                  this.setState({
+                    serverData: [...this.state.serverData, ...responseJson.data.data],
+                    //adding the new data with old one available
+                    fetching_from_server: false,
+                    //updating the loading state to false
+                  });
+                } else {
+                  this.setState({
+                    fetching_from_server: false,
+                    isListEnd: true,
+                  });
+                }
+              })
+              .catch(error => {
+                this.showErrorAlert(i18n.translations.server_connect_error);
               });
-            } else {
-              this.setState({
-                fetching_from_server: false,
-                isListEnd: true,
-              });
-            }
-          })
-          .catch(error => {
-            console.error(error);
-          });
+          } else {
+            this.showErrorAlert(i18n.translations.network_err_msg);
+          }
+        });
+        
       });
     }
   };
+
+  showErrorAlert = (message) => {
+    this.setState({
+      fetching_from_server: false,
+      isListEnd: true,
+    });
+    Alert.alert("", message)
+  }
+
   renderFooter() {
     return (
       <View style={styles.footer}>
@@ -140,7 +212,72 @@ const nextIcon = require('../../../assets/images/next.png');
     );
   }
 
+  isdeleteInvoice(id){
+    this.setState({deleteItemId:id.toString()})
+   // Alert.alert(this.state.deleteItemId)
+  this.AlertPro.open()
+   
+ }
  
+
+
+
+  viewInvoice(data){
+      this.props.setEditData(data);
+      this.props.navigation.navigate('View Invoice')
+   }
+
+
+
+  deleteInvoice  = async() =>  {
+
+   // Alert.alert(this.state.deleteItemId);
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+
+          this.AlertPro.close()
+
+         formData = new FormData();
+         
+            formData.append('id',this.state.deleteItemId); 
+            formData.append('company_id',this.state.company_id); 
+           let response = await fetch(
+          CONSTANTS.DELETE_INVOICE_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+         console.log('-------------------------------------');
+         if(json && json.responseCode ==200){
+           this.refreshData()
+         }
+         console.log(json);
+          console.log('-------------------------------------');
+          return json;
+
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error)
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    }
+
+  }
+    
+  canceldeleteInvoice(){
+     this.setState({deleteItemId:''})
+      this.AlertPro.close()
+  }
+
+
  
 
   
@@ -178,38 +315,92 @@ const nextIcon = require('../../../assets/images/next.png');
             onEndReached={() => this.loadMoreData()}
             onEndReachedThreshold={0.5}
             renderItem={({ item, index }) => (
-              <View style={styles.item}>
-                 <View style={{flax:1,width: '70%',padding:10,paddingLeft:30}} >
-                    <Text style={styles.text,{'color':colors.primaryLight,fontSize:18,fontWeight:'800' }}>
+             
+             <View style={styles.item}>
+                 <View style={{flax:1,width: '90%',paddingLeft:10}} >
+                    <Text style={styles.text,{'color':colors.primary,fontSize:18,fontWeight:'600' ,margin:2}}>
+                    {item.customer_name.toUpperCase()}
+                    </Text>
+                    
+                    <Text style={styles.text,{'color':colors.primaryLight,fontSize:18,fontWeight:'600' ,margin:2}}>
                     {item.invoice_number.toUpperCase()}
                     </Text>
-                    <Text style={styles.text,{color:'black'}}>
-                     {item.customer_name}
-                     </Text>
-                     <Text style={styles.text,{color:colors.primaryLight,marginTop:10}}>
-                     {item.status}
-                     </Text>
 
+                    
+                     <Text style={styles.text,{'color':colors.darkGray,fontSize:18,fontWeight:'600' ,margin:2}}>
+                    {item.due_amount.toUpperCase()} USD
+                    </Text>
+
+                    <Text style={styles.text,{'color':colors[item.status],fontSize:18,fontWeight:'600' ,margin:2}}>
+                    {item.status.toUpperCase()}
+                    </Text>
                  </View>
-                  <View style={{flax:1,width: '30%', paddingRight:10,justifyContent:'space-between',  contentAlign:'right'}} >
-                    <TouchableOpacity  onPress={() => this.editInvoice(item)} >
-                       <Image
 
+                  <View style={{flax:1,width: '10%', paddingRight:10,justifyContent:'space-between',  contentAlign:'right'}} >
+                    <TouchableOpacity  onPress={() => this.editInvoice(item)} style={{margin:5}}>
+                       <Image
                         resizeMode="contain"
-                        source={nextIcon}
+                        source={editIcon}
                        />
                   </TouchableOpacity>
-                  <Text style={styles.text,{color:'black'}}>
-                     {item.due_amount} USD
-                     </Text>
+  
+                      <TouchableOpacity  onPress={() => this.viewInvoice(item)} style={{margin:5}}>
+                       <Image
+                        resizeMode="contain"
+                        source={eyeIcon}
+                       />
+                  </TouchableOpacity>
+                   <TouchableOpacity  onPress={() => this.isdeleteInvoice(item.id)} style={{margin:5}}>
+                       <Image
+                        resizeMode="contain"
+                        source={crossIcon}
+                       />
+                  </TouchableOpacity>
+
 
                   </View>
               </View>
+
             )}
             ListFooterComponent={this.renderFooter.bind(this)}
             //Adding Load More button as footer component
           />
          )}
+
+
+        <AlertPro
+          
+          ref={ref => {
+            this.AlertPro = ref;
+          }}
+
+          onConfirm={() => this.deleteInvoice()}
+          onCancel={() => this.canceldeleteInvoice()}
+          title="Delete confirmation"
+          message="Are you sure to delete the entry?"
+          textCancel="Cancel"
+          textConfirm="Delete"
+          customStyles={{
+            mask: {
+              backgroundColor: "transparent"
+            },
+            container: {
+              borderWidth: 1,
+              borderColor: "#9900cc",
+              shadowColor: "#000000",
+              shadowOpacity: 0.1,
+              shadowRadius: 10
+            },
+            buttonCancel: {
+              backgroundColor: "#4da6ff"
+            },
+            buttonConfirm: {
+              backgroundColor: "#ffa31a"
+            }
+          }}
+        />
+
+
       </View>
     );
   }
@@ -218,11 +409,16 @@ const nextIcon = require('../../../assets/images/next.png');
 const mapStateToProps = state => ({...state.app})
 const mapDisptachToProps = dispatch => {
   return {
-     setHeaderRightIconShow: (data) => dispatch({type: SET_RIGHT_ICON_SHOW, data}),
-         editData: (data) => dispatch({type: SET_EDIT_DATA, data}),
-        setItemInvoices: (data) => dispatch({type: SET_ITEMS_INVOICES, data}),
-        pageRefersh: (data) => dispatch({type: SET_PAGE_REFERSH, data}),
-
+          setHeaderRightIconShow: (data) => dispatch({type: SET_RIGHT_ICON_SHOW, data}),
+          setEditData: (data) => dispatch({type: SET_EDIT_DATA, data}),
+          setItemInvoices: (data) => dispatch({type: SET_ITEMS_INVOICES, data}),
+          pageRefersh: (data) => dispatch({type: SET_PAGE_REFERSH, data}),
+          set_before_photos: (data) => dispatch({type: BEFORE_PHOTOS, data}),
+          set_after_photos: (data) => dispatch({type: AFTER_PHOTOS, data}),
+          set_other_photos: (data) => dispatch({type: OTHER_PHOTOS, data}),
+          set_active_photo_tab: (data) => dispatch({type: ACTIVE_PHOTO_TAB, data}),
+          set_update_photo_data: (data) => dispatch({type: UPDATE_PHOTO_DATA, data}),
+          
 
   }
 }

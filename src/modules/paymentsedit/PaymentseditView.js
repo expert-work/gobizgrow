@@ -32,6 +32,8 @@ import { SET_USER_INFO } from '../AppState';
 import { colors, fonts } from '../../styles';
 const saveIcon = require('../../../assets/images/save.png');
 import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
   
  let uri='';
  let uploadUrl='';
@@ -52,7 +54,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
           
           notificationTitle:'',      
           notificationMessage:'',
-          payment_methods:[{label: "Online",value: 1},{label: "Offline",value: 2}],
+          payment_methods:[],
           customers:[],
           
           amount:this.props.editData.amount.toString(),
@@ -64,9 +66,11 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
           notes:this.props.editData.notes,
           payment_number:this.props.editData.payment_number,
           auth_token:this.props.editData.auth_token,
-
           isDisabled:false,
           invoices:this.props.editData.all_invoices,
+          total_due_amount:0,
+          prev_paid_amount:this.props.editData.amount,
+          max_payable_amount:0
     };
    }
  
@@ -85,40 +89,76 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
      //  Alert.alert(this.state.invoice_id.toString())
       var customers=  await this.getCustomers();
        this.setState({ customers:customers })
+      
+       var payment_methods=  await this.getPaymentMethods();
+       this.setState({ payment_methods:payment_methods })
 
    }
 
-
+   async  getPaymentMethods() {
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      console.log(CONSTANTS.ALL_PAYMENT_METHODS_API+'/?company_id='+this.props.userInfo.company_id);
+      try {
+        let response = await fetch(
+          CONSTANTS.ALL_PAYMENT_METHODS_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
+        );
+          let json = await response.json();
+          return json.data;
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+      return [];
+    }
+  }
+  
    async  getCustomers() {
-    console.log(CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
-          try {
-            let response = await fetch(
-              CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
-            );
-             let json = await response.json();
-                          console.log('----------start-------------');
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      console.log(CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
+      try {
+        let response = await fetch(
+          CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
+        );
+          let json = await response.json();
+                      console.log('----------start-------------');
 
-             console.log(json.data);
-              console.log('-----------end------------');
-             return json.data;
-          } catch (error) {
-            console.error(error);
-          }
-     }
+          console.log(json.data);
+          console.log('-----------end------------');
+          return json.data;
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+      return [];
+    }
+  }
    
    async  getInvoices(customer_id) {
-    console.log(CONSTANTS.ALL_INVOICES_BY_CUSTOMER_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id+'&customer_id='+customer_id);
-          try {
-            let response = await fetch(
-              CONSTANTS.ALL_INVOICES_BY_CUSTOMER_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id+'&customer_id='+customer_id,{method: 'POST'}
-            );
-             let json = await response.json();
-             console.log(json.results);
-             return json.results;
-          } catch (error) {
-            console.error(error);
-          }
-     }
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      console.log(CONSTANTS.ALL_INVOICES_BY_CUSTOMER_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id+'&customer_id='+customer_id);
+      try {
+        let response = await fetch(
+          CONSTANTS.ALL_INVOICES_BY_CUSTOMER_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id+'&customer_id='+customer_id,{method: 'POST'}
+        );
+          let json = await response.json();
+          console.log(json.results);
+          return json.results;
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+      return [];
+    }  
+  }
    
 
 
@@ -131,42 +171,48 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
  
 
   async  addPaymentsApiCall() {
-        try {
-          console.log(this.state);
-           formData = new FormData();
-          
-           formData.append('amount',this.state.amount); 
-           formData.append('payment_date',this.state.payment_date); 
-           formData.append('customer_id',this.state.customer_id); 
-           formData.append('invoice_id',this.state.invoice_id); 
-           formData.append('payment_method_id',this.state.payment_method_id); 
-           formData.append('company_id',this.state.company_id); 
-           formData.append('notes',this.state.notes); 
-           formData.append('payment_number',this.state.payment_number); 
-           formData.append('auth_token',this.state.auth_token); 
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+         formData = new FormData();
+        
+         formData.append('amount',this.state.amount); 
+         formData.append('payment_date',this.state.payment_date); 
+         formData.append('customer_id',this.state.customer_id); 
+         formData.append('invoice_id',this.state.invoice_id); 
+         formData.append('payment_method_id',this.state.payment_method_id); 
+         formData.append('company_id',this.state.company_id); 
+         formData.append('notes',this.state.notes); 
+         formData.append('payment_number',this.state.payment_number); 
+         formData.append('auth_token',this.state.auth_token); 
 
-           let response = await fetch(
-            CONSTANTS.UPDATE_PAYMENT_API,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
-            }
-          );
-           let json = await response.json();
-            return json;
-        } catch (error) {
-          console.error(error);
-        }
+         let response = await fetch(
+          CONSTANTS.UPDATE_PAYMENT_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+          return json;
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error)
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    }
+        
   }
 
 
 
   async addPayments(){
- 
+         
  
     try {
 
@@ -218,12 +264,20 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
  
 
 
+            if(this.state.amount> this.state.max_payable_amount){
+                    this.setState({
+                      notificationTitle:'Total Due: '+this.state.total_due_amount,
+                      notificationMessage:'amount must be less then total due amount. you can make max amount:'+this.state.max_payable_amount
+                    })
+                    this.AlertPro.open()
+                    return false;
+            }    
 
            this.setState({isDisabled:true})
            var user=  await this.addPaymentsApiCall();
            this.setState({isDisabled:false})
            console.log(user)
-           if(user.responseCode !=200){
+           if(user && user.responseCode !=200){
             var data=user.data
               var err='';
                   if (typeof data.payment_date != "undefined" && typeof data.payment_date[0] != "undefined") { err=err+' please select a payment  date ';}
@@ -238,7 +292,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
                     notificationMessage:err
                   })
 
-                if (typeof data.payment_method_id != "undefined" && typeof data.payment_method_id[0] != "undefined") { err=err+'Expense category is required ';}
+                 if (typeof data.payment_method_id != "undefined" && typeof data.payment_method_id[0] != "undefined") { err=err+'Expense category is required ';}
                    this.setState({
                     notificationTitle:'Some error occured',
                     notificationMessage:err
@@ -250,7 +304,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
           
 
         
-            }else{
+            }else if(user) {
                this.props.pageRefersh('refresh');
                
                this.props.pageRefersh('refresh');
@@ -265,12 +319,39 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
 
 
 async selectCustomer(customer_id){
-      this.setState({customer_id:customer_id})
-      var invoices=  await this.getInvoices(customer_id);
-      this.setState({ invoices:invoices })
+      //  this.setState({ invoices:[],invoice_id:''})
+        this.setState({customer_id:customer_id})
+        var invoices=  await this.getInvoices(customer_id);
+        this.setState({ invoices:invoices })
+        this.state.invoices.map((item, index) => {
+          if(this.state.invoice_id==item.id){
+             this.setState({selectedInvoice:item,total_due_amount:item.due_amount})
+           }          
+        })
+        this.setState({max_payable_amount: parseFloat(this.state.prev_paid_amount) + parseFloat(this.state.total_due_amount) })
 
-
+        
  }
+
+async selectInvoice(invoice_id){
+  var Invoices= this.state.invoices;
+ console.log(Invoices);
+ console.log(invoice_id);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     render() {
@@ -316,6 +397,7 @@ async selectCustomer(customer_id){
                 paddingLeft:60,
                },
             }}
+            disabled={true}
             value={this.state.customer_id}
             onValueChange={(customer_id) => this.selectCustomer(customer_id)}
             items= {this.state.customers}
@@ -351,7 +433,7 @@ async selectCustomer(customer_id){
                   Payment Number
                   <Text style={styles.required}>*</Text>
                 </Text>
-                <TextInput value={this.state.payment_number}  style={styles.inputs} onChangeText={(payment_number) => this.setState({payment_number:payment_number})}  />
+                <TextInput disabled={true} value={this.state.payment_number}  style={styles.inputs} onChangeText={(payment_number) => this.setState({payment_number:payment_number})}  />
             </View>
       
 
@@ -423,8 +505,9 @@ async selectCustomer(customer_id){
                 paddingLeft:60,
                },
             }}
+            disabled={true}
             value={this.state.invoice_id}
-            onValueChange={(invoice_id) => this.setState({invoice_id:invoice_id})}
+            onValueChange={(invoice_id) => this.selectInvoice(invoice_id)}
             items= {this.state.invoices}
 
             Icon={() => {

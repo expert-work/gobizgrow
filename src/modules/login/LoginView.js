@@ -23,7 +23,8 @@ import { Text } from '../../components/StyledText';
 import CONSTANTS from '../constants';
 import { connect } from 'react-redux';
 import { SET_USER_INFO } from '../AppState';
-
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
 
 
 var width = Dimensions.get('window').width; //full width
@@ -55,27 +56,33 @@ class LoginScreen extends React.Component {
 
 
   async  loginUserApiCall() {
-        try {
-          console.log(this.state);
-           formData = new FormData();
-           formData.append('password',this.state.password);  
-           formData.append('email',this.state.email);  
-           let response = await fetch(
-            CONSTANTS.LOGIN_API,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
-            }
-          );
-           let json = await response.json();
-            return json;
-        } catch (error) {
-          console.error(error);
-        }
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+         formData = new FormData();
+         formData.append('password',this.state.password);  
+         formData.append('email',this.state.email);  
+         let response = await fetch(
+          CONSTANTS.LOGIN_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+          return json;
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error);
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg);
+    }
+        
   }
 
  
@@ -84,7 +91,7 @@ async loginUser(){
        this.setState({isDisabled:true})
        var user=  await this.loginUserApiCall();
        this.setState({isDisabled:false})
-       if(user.responseCode !=200){
+       if(user && user.responseCode !=200){
         var data=user.data
           var err='';
               if (typeof data.email != "undefined" && typeof data.email[0] != "undefined") { err=err+' '+data.email[0];}
@@ -93,7 +100,7 @@ async loginUser(){
                 notificationMessage:err
               })
               this.AlertPro.open()
-        }else{
+        }else if(user) {
           await this.loginSuccessfull(user.data);
        }
 }

@@ -21,9 +21,11 @@ export const initialState: AppStateType = {
   ItemInInvoice:[],
   backScreen:'',
   active_photo_tab:'',
+  update_photo_data:[],
   before_photos:[],
   after_photos:[],
   other_photos:[],
+  selected_categories:[],
 };
 
 export const SET_FIRST_OPEN = 'AppState/SET_FIRST_OPEN';
@@ -42,9 +44,15 @@ export const SET_BACK_SCREEN = 'AppState/SET_BACK_SCREEN';
 export const BEFORE_PHOTOS = 'AppState/BEFORE_PHOTOS';
 export const AFTER_PHOTOS = 'AppState/AFTER_PHOTOS';
 export const OTHER_PHOTOS = 'AppState/OTHER_PHOTOS';
+export const UPDATE_PHOTO_DATA = 'AppState/UPDATE_PHOTO_DATA';
+
+
 export const ACTIVE_PHOTO_TAB = 'AppState/ACTIVE_PHOTO_TAB';
 
+export const SELECTED_CATEGORIES = 'AppState/SELECTED_CATEGORIES';
 
+
+ 
 export function setAppOpened(): ActionType {
   return {
     type: SET_FIRST_OPEN,
@@ -132,6 +140,17 @@ export default function AppStateReducer(
         ...state,
         active_photo_tab: action.data
       }; 
+    case UPDATE_PHOTO_DATA:
+      return {
+        ...state,
+        update_photo_data: action.data
+      }; 
+    case SELECTED_CATEGORIES:
+      return {
+        ...state,
+        selected_categories: action.data
+      }; 
+
 
             
     default:

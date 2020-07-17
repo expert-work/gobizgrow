@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "/Users/ashishkumarmishra/Desktop/Archive/android/app/build/intermediates/incremental/mergeDebugResources/merged.dir/values-h360dp-land-v13/values-h360dp-land-v13.xml",
+            "outputFile": "/Users/ashishkumarmishra/Desktop/gobizgrow/android/app/build/intermediates/incremental/mergeDebugResources/merged.dir/values-h360dp-land-v13/values-h360dp-land-v13.xml",
             "map": [
                 {
                     "source": "/Users/ashishkumarmishra/.gradle/caches/transforms-2/files-2.1/90a7b54c964b4440b462dde95015b7c0/res/values-h360dp-land-v13/values-h360dp-land-v13.xml",

@@ -34,6 +34,8 @@ import { SET_USER_INFO } from '../AppState';
 import { colors, fonts } from '../../styles';
 const saveIcon = require('../../../assets/images/save.png');
 import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN,SET_EDIT_DATA} from '../AppState';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
   
  let uri='';
  let uploadUrl='';
@@ -70,6 +72,9 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN
           discount_type:this.props.editData.discount_type,
           discount:this.props.editData.discount.toString(),
           auth_token:this.props.editData.auth_token,
+          status:this.props.editData.status,
+          id:this.props.editData.id,
+          status_update_type:'',
           discountTypes:[
                 { label: '$', value: 'Fixed' },
                 { label: '%', value: 'Percentage' },
@@ -139,18 +144,26 @@ console.log(this.state)
    }
 
   async  getCustomers() {
-    console.log(CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
-          try {
-            let response = await fetch(
-              CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
-            );
-             let json = await response.json();
-                   
-             return json.data;
-          } catch (error) {
-            console.error(error);
-          }
-     }
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      console.log(CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
+      try {
+        let response = await fetch(
+          CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
+        );
+          let json = await response.json();
+                
+          return json.data;
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+      return [];
+    }
+    
+  }
     
 
   isDecimalNumber(number){
@@ -228,42 +241,152 @@ setDiscountType(discount_type){
      this.setState({total:sub_total-discount_val,discount_val:discount_val})
 }
 
-  async  editEstimateApiCall() {
-        try {
-          console.log(this.state);
-           formData = new FormData();
-           formData.append('estimate_date',this.state.estimate_date); 
-           formData.append('due_date',this.state.due_date); 
-           formData.append('estimate_number',this.state.estimate_number); 
-           formData.append('sub_total',this.state.sub_total);
-           formData.append('discount',this.state.discount);
-           formData.append('discount_type',this.state.discount_type);
-           formData.append('total',this.state.total);
-           formData.append('items', JSON.stringify(this.state.ItemInInvoice));
-           formData.append('company_id',this.state.company_id); 
-           formData.append('discount_val',this.state.discount_val); 
-           formData.append('auth_token',this.state.auth_token); 
-           formData.append('notes',this.state.notes); 
+
+ 
 
 
-           formData.append('customer_id',this.state.customer_id); 
 
-           let response = await fetch(
-            CONSTANTS.UPDATE_ESTIMATE_API,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
+
+ 
+submitAlertPrompt  = async() =>  {
+       let url='';
+      if(this.state.status_update_type=='CONVERT_TO_INVOICE'){  url=CONSTANTS.CONVERT_TO_INVOICE_API }
+      if(this.state.status_update_type=='MARK_AS_SENT'){  url= CONSTANTS.MARK_AS_SENT_API }
+      if(this.state.status_update_type=='SEND_ESTIMATE'){  url= CONSTANTS.SEND_ESTIMATE_API }
+      if(this.state.status_update_type=='MARK_AS_ACCEPTED'){  url= CONSTANTS.MARK_AS_ACCEPTED_API }
+      if(this.state.status_update_type=='MARK_AS_REJECTED'){  url= CONSTANTS.MARK_AS_REJECTED_API }
+      if(this.state.status_update_type=='DELETE_ESTIMATE'){  url= CONSTANTS.DELETE_ESTIMATE_API }
+      this.setState({status_update_type:'',notificationTitle:'', notificationMessage:''})
+      this[AlertPro + 'update'].close()
+      url= url+'?id='+this.state.id+'&company_id='+this.state.company_id;
+
+
+         // Alert.alert(this.state.deleteItemId);
+          let netState = await NetInfo.fetch();
+          if (netState.isConnected) {
+            try {
+              console.log(this.state);
+
+                this.AlertPro.close()
+
+               formData = new FormData();
+               
+                  formData.append('id',this.state.id); 
+                  formData.append('company_id',this.state.company_id); 
+                 let response = await fetch(url,
+                { 
+                  headers: {
+                    'Accept': 'application/json',
+                     'Content-Type': 'multipart/form-data'
+                  },
+                  method: 'POST',
+                  body:formData
+                }
+              );
+               let json = await response.json();
+               console.log('-------------------------------------');
+               if(json && json.responseCode ==200){
+                   this.props.pageRefersh('refresh');
+                   this.props.pageRefersh('refresh');
+                   this.props.navigation.navigate('Estimates')
+               }
+               console.log(json);
+                console.log('-------------------------------------');
+                return json;
+
+            } catch (error) {
+              Alert.alert("", i18n.translations.server_connect_error)
             }
-          );
-           let json = await response.json();
-            return json;
-        } catch (error) {
-          console.error(error);
-        }
+          } else {
+            Alert.alert("", i18n.translations.network_err_msg)
+          }
+
+}
+
+
+cancelAlertPromt(){
+   this.setState({status_update_type:'',notificationTitle:'', notificationMessage:''})
+   this[AlertPro + 'update'].close()
+
+}
+
+isconvertToInvoice(){
+   this.setState({status_update_type:'CONVERT_TO_INVOICE',notificationTitle:'Are you sure?', notificationMessage:'Convert to Invoice'})
+   this[AlertPro + 'update'].open()
+}
+
+ismarkAsSent(){
+   this.setState({status_update_type:'MARK_AS_SENT',notificationTitle:'Are you sure?', notificationMessage:'Mark as Sent'})
+   this[AlertPro + 'update'].open()
+}
+
+issendEstimate(){
+   this.setState({status_update_type:'SEND_ESTIMATE',notificationTitle:'Are you sure?', notificationMessage:'Send Estimate'})
+   this[AlertPro + 'update'].open()
+}
+
+ismarkAsAccepted(){
+   this.setState({status_update_type:'MARK_AS_ACCEPTED',notificationTitle:'Are you sure?', notificationMessage:'Mark as Accepted'})
+   this[AlertPro + 'update'].open()
+}
+
+ismarkAsRejected(){
+   this.setState({status_update_type:'MARK_AS_REJECTED',notificationTitle:'Are you sure?', notificationMessage:'Mark as rejected'})
+   this[AlertPro + 'update'].open()
+}
+
+isdeleteEstimate(){
+   this.setState({status_update_type:'DELETE_ESTIMATE',notificationTitle:'Are you sure?', notificationMessage:'Delete'})
+   this[AlertPro + 'update'].open()
+}
+
+
+
+
+
+
+  async  editEstimateApiCall() {
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+         formData = new FormData();
+         formData.append('estimate_date',this.state.estimate_date); 
+         formData.append('due_date',this.state.due_date); 
+         formData.append('estimate_number',this.state.estimate_number); 
+         formData.append('sub_total',this.state.sub_total);
+         formData.append('discount',this.state.discount);
+         formData.append('discount_type',this.state.discount_type);
+         formData.append('total',this.state.total);
+         formData.append('items', JSON.stringify(this.state.ItemInInvoice));
+         formData.append('company_id',this.state.company_id); 
+         formData.append('discount_val',this.state.discount_val); 
+         formData.append('auth_token',this.state.auth_token); 
+         formData.append('notes',this.state.notes); 
+
+
+         formData.append('customer_id',this.state.customer_id); 
+
+         let response = await fetch(
+          CONSTANTS.UPDATE_ESTIMATE_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+          return json;
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error)
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    }
+        
   }
 
 async selectCustomer(customer_id){ this.setState({customer_id:customer_id}) }
@@ -325,7 +448,7 @@ this.props.navigation.navigate('Select Item')
            var user=  await this.editEstimateApiCall();
            this.setState({isDisabled:false})
            console.log(user)
-           if(user.responseCode !=200){
+           if(user && user.responseCode !=200){
             var data=user.data
               var err='';
                   if (typeof data.estimate_date != "undefined" && typeof data.estimate_date[0] != "undefined") { err=err+' please pick estimate date ';}
@@ -358,7 +481,7 @@ this.props.navigation.navigate('Select Item')
                   this.AlertPro.open()
    
 
-            }else{
+            }else if(user) {
                this.props.pageRefersh('refresh');
                this.setState({
                     name:'',
@@ -656,11 +779,62 @@ this.props.navigation.navigate('Select Item')
                           borderRadius:2,
                           borderColor:colors.primary}}   />
              </View>
-              <View style={{padding:15,paddingTop:5}}>
-                <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.editEstimate()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.primaryLight,borderRadius:2,padding:10}}>
-                     <Text style={{color:'white',fontSize:18}}>Save</Text>
+
+
+              <View style={{padding:15,paddingBottom:2,  paddingTop:10}}>
+                <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.isconvertToInvoice()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.primaryLight,borderRadius:2,padding:10}}>
+                     <Text style={{color:'white',fontSize:18}}>Convert To Invoice</Text>
                 </TouchableOpacity>
              </View>
+
+            { (this.state.status=='DRAFT')  && 
+                  <View>
+                   <View style={{padding:15,paddingBottom:2,  paddingTop:1}}>
+                      <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.ismarkAsSent()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.primaryGradientStart,borderRadius:2,padding:10}}>
+                           <Text style={{color:'white',fontSize:18}}>Mark as Sent</Text>
+                      </TouchableOpacity>
+                   </View>
+
+                   <View style={{padding:15,paddingBottom:2,  paddingTop:1}}>
+                      <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.issendEstimate()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.SENT,borderRadius:2,padding:10}}>
+                           <Text style={{color:'white',fontSize:18}}>Send Estimate</Text>
+                      </TouchableOpacity>
+                   </View>
+                </View>
+
+            }
+
+            { (this.state.status=='SENT')  && 
+                  <View>
+                   <View style={{padding:15,paddingBottom:2,  paddingTop:1}}>
+                      <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.ismarkAsAccepted()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.ACCEPTED,borderRadius:2,padding:10}}>
+                           <Text style={{color:'white',fontSize:18}}>Mark Accepted</Text>
+                      </TouchableOpacity>
+                   </View>
+
+
+                    <View style={{padding:15,paddingBottom:2,  paddingTop:1}}>
+                      <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.ismarkAsRejected()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.yellow,borderRadius:2,padding:10}}>
+                           <Text style={{color:'white',fontSize:18}}>Mark Rejected</Text>
+                      </TouchableOpacity>
+                   </View>
+                </View>
+
+            }
+
+
+              <View style={{padding:15,paddingBottom:2,  paddingTop:20}}>
+                <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.isdeleteEstimate()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.REJECTED,borderRadius:2,padding:10}}>
+                     <Text style={{color:'white',fontSize:18}}>Delete</Text>
+                </TouchableOpacity>
+             </View>
+
+              <View style={{padding:15,paddingBottom:2,  paddingTop:1}}>
+                <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.editEstimate()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.primaryLight,borderRadius:2,padding:10}}>
+                     <Text style={{color:'white',fontSize:18}}>Save </Text>
+                </TouchableOpacity>
+             </View>
+
             <View style={{padding:40}}></View>
        </View>
 
@@ -699,6 +873,43 @@ this.props.navigation.navigate('Select Item')
             }
           }}
         />
+
+
+
+        <AlertPro
+          
+          ref={ref => {
+                this[AlertPro + 'update'] = ref;
+          }}
+
+          onConfirm={() => this.submitAlertPrompt()}
+          onCancel={() => this.cancelAlertPromt()}
+          title={this.state.notificationTitle}
+          message={this.state.notificationMessage}
+          textCancel="Cancel"
+          textConfirm="Submit"
+          customStyles={{
+            mask: {
+              backgroundColor: "transparent"
+            },
+            container: {
+              borderWidth: 1,
+              borderColor: "#9900cc",
+              shadowColor: "#000000",
+              shadowOpacity: 0.1,
+              shadowRadius: 10
+            },
+            buttonCancel: {
+              backgroundColor: "#4da6ff"
+            },
+            buttonConfirm: {
+              backgroundColor: "#ffa31a"
+            }
+          }}
+        />
+
+
+
       </ScrollView>
     );
   }

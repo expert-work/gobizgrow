@@ -41,32 +41,82 @@ import CONSTANTS from '../constants';
 import { connect } from 'react-redux';
 import { SET_USER_INFO } from '../AppState';
 import { colors, fonts } from '../../styles';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
+
+
 const saveIcon = require('../../../assets/images/save.png');
-import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
+import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,BEFORE_PHOTOS,AFTER_PHOTOS,OTHER_PHOTOS,ACTIVE_PHOTO_TAB } from '../AppState';
+
 
 
  class PhotonewScreen extends Component {
   constructor(props) {
       super(props);
       this.state = {
+        fetching_from_server:false,
                   company_id:'',
           notificationTitle:'',      
           notificationMessage:'',
+          notes:'',
           isDisabled:true,
             filepath: {
               data: '',
               uri: ''
             },
             fileData: '',
-            fileUri: ''
+            fileUri: '',
+            file_server:'',
     }
 
    }
  
 
+  renderLoader() {
+    return (
+      <View>
+        {this.state.fetching_from_server ? (
+          <ActivityIndicator color="black" style={{ margin: 15 }} />
+        ) : <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.addPhoto()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.primaryLight,borderRadius:2,padding:10}}>
+                     <Text style={{color:'white',fontSize:18}}>Save</Text>
+                </TouchableOpacity>}
+      </View>
+    );
+  }
 
  
+ addPhoto(){
+  
+    var photo={
+        unique_id:this.makeid(10),
+        url:this.state.fileUri,
+        file_server:this.state.file_server,
+        notes:this.state.notes,
+    }
 
+     let activeTab= this.props.active_photo_tab; 
+     
+     if(activeTab=='before'){
+           let photos=this.props.before_photos
+           photos.push(photo)
+           this.props.set_before_photos(photos)
+     }
+     if(activeTab=='after'){
+           let photos=this.props.after_photos
+           photos.push(photo)
+           this.props.set_after_photos(photos)    
+     }
+
+     if(activeTab=='other'){
+           let photos=this.props.other_photos
+           photos.push(photo)
+           this.props.set_other_photos(photos)     
+     }
+
+    this.props.navigation.navigate(this.props.backScreen)
+ //Alert.alert(this.props.active_photo_tab+'----'+ this.state.notes+'---'+this.state.fileUri)
+
+ }
 
   componentDidMount() {
        this.setState({company_id:this.props.userInfo.company_id})
@@ -115,51 +165,37 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
   }
 
   uploadFileApi = async() =>  {
-
-  Alert.alert('eeee');
-
-           formData = new FormData();
-           formData.append("file", {
-              uri: this.state.fileUri  ,
-              type: this.state.fileType,
-              name: 'file.jpeg'
-            })
-
-            let options={ 
-                        headers: {
-                          'Accept': 'application/json',
-                           'Content-Type': 'multipart/form-data'
-                        },
-                        method: 'POST',
-                        body:formData
-                      }
-
-            fetch( CONSTANTS.UPLOADS,options, 5000)
-                  .then((result) => {
-                      console.log(result);
-                       Alert.alert('success')
-                  })
-                  .catch((e) => {
-                       console.log(e);
-                       Alert.alert('failed')
-                      // handle errors and timeout error
-                  })
-
-
-
- // let json = await response.json();
- //     console.log(response.ok);         
- //     console.log(json);         
-         
-               // if(!this.isJson(response)){
-               //  Alert.alert('faild');
-               // }
-
-               // let json = await response.json();
-               // this.setState({
-               //    fileUri:json.data,
-               //    isDisabled:false
-               // });
+      let netState = await NetInfo.fetch();
+        if (netState.isConnected) {
+                this.setState({fetching_from_server:true,isDisabled:true})
+                   formData = new FormData();
+                   formData.append("file", {
+                      uri: this.state.fileUri  ,
+                      type: this.state.fileType,
+                      name: 'file.jpeg'
+                    })
+                    let options={ 
+                                headers: {
+                                  'Accept': 'application/json',
+                                   'Content-Type': 'multipart/form-data'
+                                },
+                                method: 'POST',
+                                body:formData
+                              }  
+                          try {  
+                                 let response = await fetch( CONSTANTS.UPLOADS,options);
+                                 let json = await response.json();
+                                 this.setState({fetching_from_server:false,fileUri: json.data,isDisabled:false})
+                                return json.data;
+                          } catch (error) {
+                                 this.setState({fetching_from_server:false})
+                                 console.log(error);
+                                 return [];
+                          }
+          }else {
+            Alert.alert("", i18n.translations.network_err_msg)
+            return [];
+          }
   }
 
  isJson(str) {
@@ -172,7 +208,17 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
 }
 
 
-  
+makeid(length) {
+   var result           = '';
+   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+   var charactersLength = characters.length;
+   for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+   }
+   return result;
+}
+
+
   renderFileData() {
     if (this.state.fileData) {
       return <Image source={{ uri: 'data:image/jpeg;base64,' + this.state.fileData }}
@@ -233,18 +279,17 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
                  Description
                 </Text>
                 <TextInput multiline={true} numberOfLines={4}
-                          value={this.state.description} 
-                          onChangeText={(description) => this.setState({description:description})}
+                          value={this.state.notes} 
+                          onChangeText={(notes) => this.setState({notes:notes})}
                            style={{borderWidth:1,height:60,color:colors.primary,
                           padding:10,
                           borderWidth:.5,
                           borderRadius:2,
                           borderColor:colors.primary}}   />
              </View>
+             
             <View style={{padding:15,paddingTop:5}}>
-                <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.addCategory()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.primaryLight,borderRadius:2,padding:10}}>
-                     <Text style={{color:'white',fontSize:18}}>Save</Text>
-                </TouchableOpacity>
+                {this.renderLoader()}
              </View>
             <View style={{padding:40}}></View>
 
@@ -297,7 +342,13 @@ const mapStateToProps = state => ({...state.app})
 const mapDisptachToProps = dispatch => {
   return {
     pageRefersh: (data) => dispatch({type: SET_PAGE_REFERSH, data}),
-    setHeaderRightIconShow: (data) => dispatch({type: SET_RIGHT_ICON_SHOW, data})
+    setHeaderRightIconShow: (data) => dispatch({type: SET_RIGHT_ICON_SHOW, data}),
+    
+    set_before_photos: (data) => dispatch({type: BEFORE_PHOTOS, data}),
+    set_after_photos: (data) => dispatch({type: AFTER_PHOTOS, data}),
+    set_other_photos: (data) => dispatch({type: OTHER_PHOTOS, data}),
+    set_active_photo_tab: (data) => dispatch({type: ACTIVE_PHOTO_TAB, data})
+
   }
 }
 export default connect(mapStateToProps, mapDisptachToProps)(PhotonewScreen)

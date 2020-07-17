@@ -8,17 +8,17 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  Image,
-  ScrollView,
+   ScrollView,
   Alert,
   TextInput,
-  TouchableOpacity,
+  TouchableOpacity, 
   Dimensions
 } from 'react-native';
 import AlertPro from "react-native-alert-pro";
 import DatePicker from 'react-native-datepicker';
 import RNPickerSelect from 'react-native-picker-select';
 import SearchableDropdown from 'react-native-searchable-dropdown';
+import Image from 'react-native-image-progress';
 
 var width = Dimensions.get('window').width; //full width
 var height = Dimensions.get('window').height; //full height
@@ -33,10 +33,17 @@ import { connect } from 'react-redux';
 import { SET_USER_INFO } from '../AppState';
 import { colors, fonts } from '../../styles';
 const saveIcon = require('../../../assets/images/save.png');
-import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN,SET_EDIT_DATA} from '../AppState';
-  
+import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN,SET_EDIT_DATA,BEFORE_PHOTOS,AFTER_PHOTOS,OTHER_PHOTOS,ACTIVE_PHOTO_TAB,UPDATE_PHOTO_DATA} from '../AppState';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
  let uri='';
  let uploadUrl='';
+
+
+
+
+
+
 
 
  const settings = {
@@ -55,12 +62,14 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN
           company_id:'',
           notificationTitle:'',      
           notificationMessage:'',
-           
+           status_update_type:'',
           invoice_number:this.props.editData.invoice_number,
           notes:this.props.editData.notes,
           customer_id:this.props.editData.customer_id,
           invoice_date:this.props.editData.invoice_date,
           due_date:this.props.editData.due_date,
+          status:this.props.editData.status,
+          id:this.props.editData.id,
           isDisabled:false,
           customers: [],
           ItemInInvoice:[],
@@ -73,7 +82,10 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN
           discountTypes:[
                 { label: '$', value: 'Fixed' },
                 { label: '%', value: 'Percentage' },
-             ]
+             ],
+          before_photos:this.props.before_photos,
+          after_photos:this.props.after_photos,
+          other_photos:this.props.other_photos
     };
 
 
@@ -105,7 +117,8 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN
 
 console.log(this.state)
       this._unsubscribe = this.props.navigation.addListener('focus', () => {
-                this.setState({ItemInInvoice:this.props.ItemInInvoice})
+               this.setState({ItemInInvoice:this.props.ItemInInvoice,before_photos:this.props.before_photos,after_photos:this.props.after_photos,other_photos:this.props.other_photos })
+
                 var sub_total=0;
                 this.props.ItemInInvoice.map((arr, index) => {
                   sub_total=sub_total + parseFloat(arr.price*arr.quantity);
@@ -133,18 +146,26 @@ console.log(this.state)
    }
 
   async  getCustomers() {
-    console.log(CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
-          try {
-            let response = await fetch(
-              CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
-            );
-             let json = await response.json();
-                   
-             return json.data;
-          } catch (error) {
-            console.error(error);
-          }
-     }
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      console.log(CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
+      try {
+        let response = await fetch(
+          CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
+        );
+          let json = await response.json();
+                
+          return json.data;
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg);
+      return [];
+    }
+    
+  }
     
 
   isDecimalNumber(number){
@@ -166,6 +187,18 @@ console.log(this.state)
           // Alert.alert(this.props.customerEditId)
  
   }
+
+addPhotos(type){
+ this.props.set_active_photo_tab(type)
+ this.props.navigation.navigate('Add Photo')
+}
+
+
+updatePhoto(arr, type){
+  this.props.set_active_photo_tab(type) 
+  this.props.set_update_photo_data(arr)
+  this.props.navigation.navigate('Update Photo')
+}
 
 
   setDiscount(discount){
@@ -223,44 +256,148 @@ setDiscountType(discount_type){
 }
 
   async  editInvoiceApiCall() {
-        try {
-          console.log(this.state);
-           formData = new FormData();
-           formData.append('invoice_date',this.state.invoice_date); 
-           formData.append('due_date',this.state.due_date); 
-           formData.append('invoice_number',this.state.invoice_number); 
-           formData.append('sub_total',this.state.sub_total);
-           formData.append('discount',this.state.discount);
-           formData.append('discount_type',this.state.discount_type);
-           formData.append('total',this.state.total);
-           formData.append('items', JSON.stringify(this.state.ItemInInvoice));
-           formData.append('company_id',this.state.company_id); 
-           formData.append('discount_val',this.state.discount_val); 
-           formData.append('auth_token',this.state.auth_token); 
-           formData.append('notes',this.state.notes); 
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+         formData = new FormData();
+         formData.append('invoice_date',this.state.invoice_date); 
+         formData.append('due_date',this.state.due_date); 
+         formData.append('invoice_number',this.state.invoice_number); 
+         formData.append('sub_total',this.state.sub_total);
+         formData.append('discount',this.state.discount);
+         formData.append('discount_type',this.state.discount_type);
+         formData.append('total',this.state.total);
+         formData.append('items', JSON.stringify(this.state.ItemInInvoice));
+         formData.append('company_id',this.state.company_id); 
+         formData.append('discount_val',this.state.discount_val); 
+         formData.append('auth_token',this.state.auth_token); 
+         formData.append('notes',this.state.notes); 
+         formData.append('before_photos', JSON.stringify(this.state.before_photos));
+         formData.append('after_photos', JSON.stringify(this.state.after_photos));
+         formData.append('other_photos', JSON.stringify(this.state.other_photos));
 
 
-           formData.append('customer_id',this.state.customer_id); 
+         formData.append('customer_id',this.state.customer_id); 
 
-           let response = await fetch(
-            CONSTANTS.UPDATE_INVOICE_API,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
-            }
-          );
-           let json = await response.json();
-            return json;
-        } catch (error) {
-          console.error(error);
-        }
+         let response = await fetch(
+          CONSTANTS.UPDATE_INVOICE_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+          return json;
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error)
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    }
+        
   }
 
 async selectCustomer(customer_id){ this.setState({customer_id:customer_id}) }
+
+
+
+
+
+
+
+ 
+submitAlertPrompt  = async() =>  {
+       let url='';
+      if(this.state.status_update_type=='CLONE_INVOICE'){  url=CONSTANTS.CLONE_INVOICE_API }
+      if(this.state.status_update_type=='DELETE_INVOICE'){  url= CONSTANTS.DELETE_INVOICE_API }
+      if(this.state.status_update_type=='MARK_AS_SENT_INVOICE'){  url= CONSTANTS.MARK_AS_SENT_INVOICE_API }
+      if(this.state.status_update_type=='SEND_INVOICE'){  url= CONSTANTS.SEND_INVOICE_API }
+               this.setState({status_update_type:'',notificationTitle:'', notificationMessage:''})
+      this[AlertPro + 'update'].close()
+      url= url+'?id='+this.state.id+'&company_id='+this.state.company_id;
+
+
+         // Alert.alert(this.state.deleteItemId);
+          let netState = await NetInfo.fetch();
+          if (netState.isConnected) {
+            try {
+              console.log(this.state);
+
+                this.AlertPro.close()
+
+               formData = new FormData();
+               
+                  formData.append('id',this.state.id); 
+                  formData.append('company_id',this.state.company_id); 
+                 let response = await fetch(url,
+                { 
+                  headers: {
+                    'Accept': 'application/json',
+                     'Content-Type': 'multipart/form-data'
+                  },
+                  method: 'POST',
+                  body:formData
+                }
+              );
+               let json = await response.json();
+               console.log('-------------------------------------');
+               if(json && json.responseCode ==200){
+                   this.props.pageRefersh('refresh');
+                   this.props.pageRefersh('refresh');
+                   this.props.navigation.navigate('Invoices')
+               }
+               console.log(json);
+                console.log('-------------------------------------');
+                return json;
+
+            } catch (error) {
+              Alert.alert("", i18n.translations.server_connect_error)
+            }
+          } else {
+            Alert.alert("", i18n.translations.network_err_msg)
+          }
+
+}
+
+
+cancelAlertPromt(){
+     Alert.alert('under development');
+
+   this.setState({status_update_type:'',notificationTitle:'', notificationMessage:''})
+   this[AlertPro + 'update'].close()
+
+}
+
+cloneInvoice(){
+   this.setState({status_update_type:'CLONE_INVOICE',notificationTitle:'Are you sure?', notificationMessage:'Convert to Invoice'})
+   this[AlertPro + 'update'].open()
+}
+
+isdeleteInvoice(){
+   this.setState({status_update_type:'DELETE_INVOICE',notificationTitle:'Are you sure?', notificationMessage:'Delete'})
+   this[AlertPro + 'update'].open()
+}
+
+ismarkAsSent(){
+   this.setState({status_update_type:'MARK_AS_SENT_INVOICE',notificationTitle:'Are you sure?', notificationMessage:'Delete'})
+   this[AlertPro + 'update'].open()
+}
+issendInvoice(){
+   this.setState({status_update_type:'SEND_INVOICE',notificationTitle:'Are you sure?', notificationMessage:'Delete'})
+   this[AlertPro + 'update'].open()
+}
+recordPayment(){
+   Alert.alert('under development');
+  this.props.navigation.navigate('Add Payment')
+}
+
+
+
 
 addItems(){
 this.props.navigation.navigate('Select Item')
@@ -319,7 +456,7 @@ this.props.navigation.navigate('Select Item')
            var user=  await this.editInvoiceApiCall();
            this.setState({isDisabled:false})
            console.log(user)
-           if(user.responseCode !=200){
+           if(user && user.responseCode !=200){
             var data=user.data
               var err='';
                   if (typeof data.invoice_date != "undefined" && typeof data.invoice_date[0] != "undefined") { err=err+' please pick invoice date ';}
@@ -352,16 +489,24 @@ this.props.navigation.navigate('Select Item')
                   this.AlertPro.open()
    
 
-            }else{
+            }else if(user) {
                this.props.pageRefersh('refresh');
                this.setState({
                     name:'',
                 })
                this.props.pageRefersh('refresh');
+
+
+                this.props.set_before_photos([]);
+                this.props.set_after_photos([]);
+                this.props.set_other_photos([]);
+                this.props.set_active_photo_tab('');
+                this.props.set_update_photo_data([]);
+
                this.props.navigation.navigate('Invoices')
                
 
-
+ 
             }
         } catch (error) {
           console.error(error);
@@ -652,6 +797,126 @@ this.props.navigation.navigate('Select Item')
                           borderRadius:2,
                           borderColor:colors.primary}}   />
              </View>
+
+
+
+
+
+            <View style={{padding:15,paddingTop:20}}>
+              <Text style={{...styles.text}} >Before Photos</Text>
+
+                       <View style={styles.list}> 
+                          {this.state.before_photos.map((arr, index) => {
+                            return(
+                              <TouchableOpacity style= {styles.box} onPress={() => this.updatePhoto(arr,'before')}>
+                                    <Image source={{ uri:arr.url }}
+                                          style={styles.boxImage}
+                                        />
+                                      <Text style={styles.boxText} >{arr.notes}</Text> 
+                              </TouchableOpacity>
+                            )
+                          })}
+                       </View>
+
+                <TouchableOpacity  onPress={() => this.addPhotos('before')}  style={{justifyContent:"center",alignItems:'center',backgroundColor:'white', borderColor:colors.primaryLight,borderWidth:1, borderRadius:2,padding:10}}>
+                     <Text style={{color:colors.primaryLight,fontSize:18}}>+ Add Photo</Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={{padding:15,paddingTop:20}}>
+              <Text style={{...styles.text}} >After Photos</Text>
+                       <View style={styles.list}> 
+                          {this.state.after_photos.map((arr, index) => {
+                            return(
+                              <TouchableOpacity style= {styles.box}  onPress={() => this.updatePhoto(arr,'after')}>
+                                       <Image source={{ uri:arr.url }}
+                                          style={styles.boxImage}
+                                        />
+                                      <Text style={styles.boxText} >{arr.notes}</Text> 
+                              </TouchableOpacity>
+                            )
+                          })}
+                       </View> 
+
+                <TouchableOpacity  onPress={() => this.addPhotos('after')}  style={{justifyContent:"center",alignItems:'center',backgroundColor:'white', borderColor:colors.primaryLight,borderWidth:1, borderRadius:2,padding:10}}>
+                     <Text style={{color:colors.primaryLight,fontSize:18}}>+ Add Photo</Text>
+                </TouchableOpacity>
+            </View>
+
+
+
+            <View style={{padding:15,paddingTop:20}}>
+              <Text style={{...styles.text}} >Other Photos</Text>
+                       <View style={styles.list}> 
+                          {this.state.other_photos.map((arr, index) => {
+                            return(
+                              <TouchableOpacity style= {styles.box} onPress={() => this.updatePhoto(arr,'other')}>
+                                      <Image source={{ uri:arr.url }}
+                                          style={styles.boxImage}
+                                        />
+                                      <Text style={styles.boxText} >{arr.notes}</Text> 
+                              </TouchableOpacity>
+                            )
+                          })}
+                       </View>
+ 
+
+                
+                <TouchableOpacity  onPress={() => this.addPhotos('other')}  style={{justifyContent:"center",alignItems:'center',backgroundColor:'white', borderColor:colors.primaryLight,borderWidth:1, borderRadius:2,padding:10}}>
+                     <Text style={{color:colors.primaryLight,fontSize:18}}>+ Add Photo</Text>
+                </TouchableOpacity>
+            </View>
+
+
+
+
+
+            <View style={{padding:15,paddingBottom:2,  paddingTop:40}}>
+                <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.cloneInvoice()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.primaryLight,borderRadius:2,padding:10}}>
+                     <Text style={{color:'white',fontSize:18}}>Clone Invoice</Text>
+                </TouchableOpacity>
+            </View>
+
+
+           { (this.state.status=='DRAFT')  && 
+                  <View>
+                   <View style={{padding:15,paddingBottom:2,  paddingTop:1}}>
+                      <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.ismarkAsSent()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.primaryGradientStart,borderRadius:2,padding:10}}>
+                           <Text style={{color:'white',fontSize:18}}>Mark as Sent</Text>
+                      </TouchableOpacity>
+                   </View>
+
+                   <View style={{padding:15,paddingBottom:2,  paddingTop:1}}>
+                      <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.issendInvoice()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.SENT,borderRadius:2,padding:10}}>
+                           <Text style={{color:'white',fontSize:18}}>Send Invoice</Text>
+                      </TouchableOpacity>
+                   </View>
+                </View>
+
+            }
+
+           { (this.state.status=='SENT')  && 
+                  <View>
+                   <View style={{padding:15,paddingBottom:2,  paddingTop:1}}>
+                      <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.recordPayment()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.ACCEPTED,borderRadius:2,padding:10}}>
+                           <Text style={{color:'white',fontSize:18}}>Record Payment</Text>
+                      </TouchableOpacity>
+                   </View>
+
+                
+                </View>
+
+            }
+
+
+
+              <View style={{padding:15,paddingBottom:2,  paddingTop:20}}>
+                <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.isdeleteInvoice()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.REJECTED,borderRadius:2,padding:10}}>
+                     <Text style={{color:'white',fontSize:18}}>Delete</Text>
+                </TouchableOpacity>
+             </View>
+
+
               <View style={{padding:15,paddingTop:5}}>
                 <TouchableOpacity disabled={this.state.isDisabled}  onPress={() => this.editInvoice()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:colors.primaryLight,borderRadius:2,padding:10}}>
                      <Text style={{color:'white',fontSize:18}}>Save</Text>
@@ -695,6 +960,42 @@ this.props.navigation.navigate('Select Item')
             }
           }}
         />
+
+
+        <AlertPro
+          
+          ref={ref => {
+                this[AlertPro + 'update'] = ref;
+          }}
+
+          onConfirm={() => this.submitAlertPrompt()}
+          onCancel={() => this.cancelAlertPromt()}
+          title={this.state.notificationTitle}
+          message={this.state.notificationMessage}
+          textCancel="Cancel"
+          textConfirm="Submit"
+          customStyles={{
+            mask: {
+              backgroundColor: "transparent"
+            },
+            container: {
+              borderWidth: 1,
+              borderColor: "#9900cc",
+              shadowColor: "#000000",
+              shadowOpacity: 0.1,
+              shadowRadius: 10
+            },
+            buttonCancel: {
+              backgroundColor: "#4da6ff"
+            },
+            buttonConfirm: {
+              backgroundColor: "#ffa31a"
+            }
+          }}
+        />
+
+
+
       </ScrollView>
     );
   }
@@ -711,6 +1012,12 @@ const mapDisptachToProps = dispatch => {
     setBackScreen: (data) => dispatch({type: SET_BACK_SCREEN, data}),
     editItemData: (data) => dispatch({type: SET_EDIT_DATA, data}),
 
+
+    set_before_photos: (data) => dispatch({type: BEFORE_PHOTOS, data}),
+    set_after_photos: (data) => dispatch({type: AFTER_PHOTOS, data}),
+    set_other_photos: (data) => dispatch({type: OTHER_PHOTOS, data}),
+    set_active_photo_tab: (data) => dispatch({type: ACTIVE_PHOTO_TAB, data}),
+    set_update_photo_data: (data) => dispatch({type: UPDATE_PHOTO_DATA, data}),
   }
 }
 export default connect(mapStateToProps, mapDisptachToProps)(InvoiceseditScreen)
@@ -787,6 +1094,54 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+  },
+
+     gridView: {
+    marginTop: 10,
+    flex: 1,
+  },
+  itemContainer: {
+    justifyContent: 'flex-end',
+    borderRadius: 5,
+    padding: 10,
+   },
+  itemName: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  itemCode: {
+    fontWeight: '600',
+    fontSize: 12,
+    color: '#fff',
+  },
+boxImage: { 
+    flex: 1, 
+    width: 150, 
+    height: 150,
+},
+box: {
+      width: 150,
+      backgroundColor: '#00000003',
+      height: 150,
+      alignItems: 'stretch',
+      margin: 3
+}, 
+boxText: {
+      flex: 1,
+      fontWeight: '900',
+      fontSize: 15,
+      color: 'white',
+      position: 'absolute',
+      bottom: 5,
+      right: 5,
+      backgroundColor: 'rgba(0,0,0,0)'
+},
+list: {
+       flex: 1,
+       flexDirection: 'row',
+       flexWrap: 'wrap',
+       justifyContent: 'center'
   },
 });
 

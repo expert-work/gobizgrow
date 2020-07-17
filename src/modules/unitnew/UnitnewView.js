@@ -25,6 +25,8 @@ import { SET_USER_INFO } from '../AppState';
 import { colors, fonts } from '../../styles';
 const saveIcon = require('../../../assets/images/save.png');
 import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
 
 
  class UnitnewScreen extends Component {
@@ -56,28 +58,34 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
  
 
   async  addUnitApiCall() {
-        try {
-          console.log(this.state);
-           formData = new FormData();
-           formData.append('name',this.state.name); 
-           formData.append('company_id',this.state.company_id); 
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+         formData = new FormData();
+         formData.append('name',this.state.name); 
+         formData.append('company_id',this.state.company_id); 
 
-           let response = await fetch(
-            CONSTANTS.ADD_UNIT_API,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
-            }
-          );
-           let json = await response.json();
-            return json;
-        } catch (error) {
-          console.error(error);
-        }
+         let response = await fetch(
+          CONSTANTS.ADD_UNIT_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+          return json;
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error)
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    }
+        
   }
 
 
@@ -98,7 +106,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
            var user=  await this.addUnitApiCall();
            this.setState({isDisabled:false})
            console.log(user)
-           if(user.responseCode !=200){
+           if(user && user.responseCode !=200){
             var data=user.data
               var err='';
                   if (typeof data.name != "undefined" && typeof data.name[0] != "undefined") { err=err+' '+data.name[0];}
@@ -107,7 +115,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
                     notificationMessage:err
                   })
                   this.AlertPro.open()
-            }else{
+            }else if (user) {
                this.props.pageRefersh('refresh');
                this.setState({
                     name:'',

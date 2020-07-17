@@ -31,8 +31,9 @@ import { connect } from 'react-redux';
 import { SET_USER_INFO } from '../AppState';
 import { colors, fonts } from '../../styles';
 const saveIcon = require('../../../assets/images/save.png');
-import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
-  
+import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SELECTED_CATEGORIES,SET_BACK_SCREEN } from '../AppState';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
  let uri='';
  let uploadUrl='';
 
@@ -62,6 +63,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
           isDisabled:false,
           categories:[],
           units:[],
+          SELECTED_CATEGORIES:[],
     };
    }
  
@@ -70,52 +72,38 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
  
 
  async componentDidMount() {
-  this._unsubscribe = this.props.navigation.addListener('focus', () => {
+  this.props.SET_SELECTED_CATEGORIES([]);
+  this.props.SET_BACK_SCREEN('Add Item');
+       this._unsubscribe = this.props.navigation.addListener('focus', () => {
+                this.setState({SELECTED_CATEGORIES:this.props.selected_categories})
                 this.props.setHeaderRightIconShow(false);
        });
-       var categories=  await this.getCategories();
-       this.setState({ categories:categories })
-
-        var units=  await this.getUnits();
-        this.setState({ units:units })
-
        this.setState({company_id:this.props.userInfo.company_id})
-     
    }
 
 
 
-
-
-   async  getUnits() {
-    console.log(CONSTANTS.ALL_UNITS_API_DROPDOWN+'/?company_id='+this.props.userInfo.company_id);
-          try {
-            let response = await fetch(
-              CONSTANTS.ALL_UNITS_API_DROPDOWN+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
-            );
-             let json = await response.json();
-             console.log(json.data);
-             return json.data;
-          } catch (error) {
-            console.error(error);
-          }
-     }    
+ 
    
 
-   async  getCategories() {
-    console.log(CONSTANTS.ALL_CATEGORY_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
-          try {
-            let response = await fetch(
-              CONSTANTS.ALL_CATEGORY_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
-            );
-             let json = await response.json();
-             console.log(json.data);
-             return json.data;
-          } catch (error) {
-            console.error(error);
-          }
-     }
-   
+    
+  showErrorAlert = (message) => {
+    this.setState({
+      fetching_from_server: false,
+      isListEnd: true,
+    });
+    Alert.alert("", message)
+  }
+
+  renderFooter() {
+    return (
+      <View style={styles.footer}>
+        {this.state.fetching_from_server ? (
+          <ActivityIndicator color="black" style={{ margin: 15 }} />
+        ) : null}
+      </View>
+    );
+  }
 
 
   componentWillUnmount() {
@@ -124,39 +112,52 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
  
 
   async  addItemsApiCall() {
-        try {
-          console.log(this.state);
-           formData = new FormData();
-           
-           formData.append('name',this.state.name); 
-           formData.append('price',this.state.price); 
-           formData.append('description',this.state.description); 
-           formData.append('category',this.state.category.toString()); 
-           formData.append('category_ids',this.state.category_ids.toString()); 
-           formData.append('unit',this.state.unit); 
-           formData.append('company_id',this.state.company_id); 
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+         formData = new FormData();
+         
+         formData.append('name',this.state.name); 
+         formData.append('price',this.state.price); 
+         formData.append('description',this.state.description); 
+         formData.append('items_categories',JSON.stringify(this.state.SELECTED_CATEGORIES)); 
+ 
+         formData.append('company_id',this.state.company_id); 
 
-           let response = await fetch(
-            CONSTANTS.ADD_ITEM_API,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
-            }
-          );
-           let json = await response.json();
-           console.log('-------------------------------------');
 
-           console.log(json);
-            console.log('-------------------------------------');
-            return json;
 
-        } catch (error) {
-          console.error(error);
-        }
+// console.log(this.state.SELECTED_CATEGORIES);
+
+
+// console.log(this.state.SELECTED_CATEGORIES.toString())
+
+// return false;
+         let response = await fetch(
+          CONSTANTS.ADD_ITEM_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+
+         let json = await response.json();
+         console.log('-------------------------------------');
+
+         console.log(json);
+          console.log('-------------------------------------');
+          return json;
+
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error)
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    }
   }
 
 
@@ -186,15 +187,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
                     this.AlertPro.open()
                     return false;
             }             
-             if(this.state.unit==''){
-                    this.setState({
-                      notificationTitle:'',
-                      notificationMessage:'Please enter  unit'
-                    })
-                    this.AlertPro.open()
-                    return false;
-            }                        
-          
+           
     
 
 
@@ -202,7 +195,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
            var user=  await this.addItemsApiCall();
            this.setState({isDisabled:false})
            console.log(user)
-           if(user.responseCode !=200){
+           if(user && user.responseCode !=200){
             var data=user.data
               var err='';
                
@@ -225,7 +218,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
                   })
  
                   this.AlertPro.open()
-            }else{
+            }else if(user) {
                this.props.pageRefersh('refresh');
                this.setState({
                     name:'',
@@ -239,17 +232,50 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
 
     //this.setState({'isDisabled':true})
   }
-   setCategoryValues(cat,index,id){
-            let cats= this.state.category
-            let cats_ids= this.state.category_ids
-            cats[index]=cat
-            cats_ids[index]=id
-            this.setState({category:cats})    
-            this.setState({category_ids:cats_ids})    
-            // console.log(this.state.category)
-            // console.log(this.state.category_ids)
+  selectCategories(){
+    this.props.navigation.navigate('Select Categories')
+
+  }
+   setCategoryValues(val,item){
+                catArr=[]; 
+               this.state.SELECTED_CATEGORIES.map((items, index) => {
+                      if(items.id == item.id){ items.price=this.isDecimalNumber(val) }
+                      catArr.push(items) ;
+               })
+               this.setState({SELECTED_CATEGORIES:catArr})
+   }
+ 
+ removeCategoryFromList(id){
+                catArr=[]; 
+               this.state.SELECTED_CATEGORIES.map((items, index) => {
+                      if(items.id != id){  catArr.push(items) ; }
+                     
+               })
+               this.setState({SELECTED_CATEGORIES:catArr})
+              this.props.SET_SELECTED_CATEGORIES(catArr);
+ }
+
+
+
+ isDecimalNumber(number){
+       const re = /^[0-9]*\.?[0-9]*$/;
+       if (number !== '' && re.test(number)) {
+          return number
+       }
+       return ''
+  }
+   getEnteredPrice(id){
+        val='';
+        this.state.SELECTED_CATEGORIES.map((items, index) => {
+                      if(items.id ==id){
+                          val=items.price
+                       }
+               })
+      return val;
 
    }
+
+
     render() {
     return (
       <ScrollView style={styles.container}>
@@ -281,63 +307,14 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
 
           <View style={{padding:15,paddingTop:3}}>
                <Text style={styles.text}>
-                  Price
+                  Generic Price
                   <Text style={styles.required}>*</Text>
                 </Text>
                 <TextInput value={this.state.price}  style={styles.inputs} onChangeText={(price) => this.setState({price:price})}  />
-           </View>
-      
-            <View style={{padding:15,paddingTop:3}}>
+           </View>  
+           <View style={{padding:15,paddingTop:3}}>
                <Text style={styles.text}>
-                 Unit
-                </Text>
-      <View style={{ borderColor: colors.primaryLight,borderWidth: 1,borderRadius:2,height:40}}> 
-
-       <RNPickerSelect
-             placeholder={{
-              label: 'Select Unit',
-              value: null,
-              color: 'red',
-            }}
-               style={{
-              ...pickerSelectStyles,
-              iconContainer: {
-                top: 15,
-                left: 10,
-              },
-              placeholder: {
-                color: colors.primaryLight,
-                fontSize: 16,
-                paddingLeft:60,
-               },
-            }}
-
-            onValueChange={(unit) => this.setState({unit:unit})}
-            items= {this.state.units}
-
-            Icon={() => {
-              return (
-                <View
-                  style={{
-                    backgroundColor: 'transparent',
-                    borderTopWidth: 10,
-                    borderTopColor: colors.primaryLight,
-                    borderRightWidth: 10,
-                    borderRightColor: 'transparent',
-                    borderLeftWidth: 10,
-                    borderLeftColor: 'transparent',
-                    width: 0,
-                    height: 0,
-                   }}
-                />
-              );
-            }}
-        />
-       </View>
-        </View>
-            <View style={{padding:15,paddingTop:3}}>
-               <Text style={styles.text}>
-                 Description
+                 Description (Optional)
                 </Text>
                 <TextInput multiline={true} numberOfLines={4}
                           value={this.state.description} 
@@ -349,20 +326,36 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
                           borderColor:colors.primary}}   />
              </View>
 
-            <Text style={{paddingTop:20,paddingLeft:15, fontSize:20,marginBottom:10}}>Add pricing based on vehical type:</Text>
-                {this.state.categories.map((arr, index) => {
-                     return(
-                        <View>
-                          <View style={{padding:15,paddingTop:3}}>
-                               <Text style={styles.text}>
-                                  {arr.name}
-                                 </Text>
-                                <TextInput value={this.state.category[index]}  style={styles.inputs} onChangeText={(cat) => this.setCategoryValues(cat,index,arr.id)}  />
-                           </View>
+            <Text style={{paddingTop:20,paddingLeft:15, fontSize:20,marginBottom:10}}>Pricing Based on Category</Text>
+           
+               <FlatList
+                  style={{ width: '100%',marginTop:20,padding:5 }}
+                  keyExtractor={(item, index) => index.toString()}
+                  data={this.state.SELECTED_CATEGORIES}
+                   onEndReachedThreshold={0.5}
+                  renderItem={({ item, index }) => (
+                    <View style={styles.item}>
+                       <View style={{flax:1,width: '35%', padding:10,}} >
+                          
+                          <Text style={styles.text}>
+                           {item.name}
+                           </Text>
+                       </View>
+                       <View style={{flax:1,width: '55%',padding:10,}} >
+                                  <TextInput value={this.getEnteredPrice(item.id)}  style={{...styles.inputs,backgroundColor:'white'}} onChangeText={(val) => this.setCategoryValues(val,item)}  />  
                         </View>
-                    )
-                })}
- 
+                        <View style={{flax:1,width: '10%',justifyContent:'space-between',  contentAlign:'right'}} >
+                        <TouchableOpacity  onPress={()=> this.removeCategoryFromList(item.id)} >
+                                                  <Text style={{color:'red', borderRadius:50, borderWidth:2,borderColor:'white',width:22,height:22, fontSize:18, fontWeight:'800'}}>X</Text>
+                        </TouchableOpacity>
+
+
+
+                        </View>
+                    </View>
+                  )}
+                  ListFooterComponent={this.renderFooter.bind(this)}
+                 />
 
 
 
@@ -370,7 +363,11 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
 
 
 
-
+            <View style={{padding:15,paddingTop:3}}>
+               <TouchableOpacity  onPress={() => this.selectCategories()}  style={{justifyContent:"center",alignItems:'center',backgroundColor:'white', borderColor:colors.primaryLight,borderWidth:1, borderRadius:2,padding:10}}>
+                       <Text style={{color:colors.primaryLight,fontSize:18}}>+ Add Category</Text>
+               </TouchableOpacity>
+            </View>
 
 
               <View style={{padding:15,paddingTop:5}}>
@@ -427,7 +424,10 @@ const mapStateToProps = state => ({...state.app})
 const mapDisptachToProps = dispatch => {
   return {
     pageRefersh: (data) => dispatch({type: SET_PAGE_REFERSH, data}),
-    setHeaderRightIconShow: (data) => dispatch({type: SET_RIGHT_ICON_SHOW, data})
+    setHeaderRightIconShow: (data) => dispatch({type: SET_RIGHT_ICON_SHOW, data}),
+        SET_SELECTED_CATEGORIES: (data) => dispatch({type: SELECTED_CATEGORIES, data}),
+    SET_BACK_SCREEN: (data) => dispatch({type: SET_BACK_SCREEN, data}),
+
   }
 }
 export default connect(mapStateToProps, mapDisptachToProps)(ItemsnewScreen)
@@ -450,14 +450,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom:5,
     paddingVertical: 15,
-    borderColor: colors.primaryLight,
+    borderColor: '#eceaea',
+    backgroundColor:'#eceaea',
     borderWidth: 1,
     borderRadius: 2,
     alignItems: 'center',
     justifyContent: 'space-around',
     marginHorizontal: 10,
   },
-   separator: {
+     separator: {
     height: 0.5,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },

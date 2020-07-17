@@ -19,6 +19,8 @@ import {
 import CONSTANTS from '../constants';
 import { fonts, colors } from '../../styles';
 import { Text } from '../../components/StyledText';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
 var width = Dimensions.get('window').width; //full width
 var height = Dimensions.get('window').height; //full height
 
@@ -35,6 +37,8 @@ var height = Dimensions.get('window').height; //full height
         isDisabled:''
        }
     async  forgotPassApiCall() {
+      let netState = await NetInfo.fetch();
+      if (netState.isConnected) {
         try {
           console.log(this.state);
            formData = new FormData();
@@ -53,15 +57,19 @@ var height = Dimensions.get('window').height; //full height
            let json = await response.json();
             return json;
         } catch (error) {
-          console.error(error);
+          Alert.alert("", i18n.translations.server_connect_error)
         }
+      } else {
+        Alert.alert("", i18n.translations.network_err_msg)
+      }
+        
   }
 
 async forgotPass(){
        this.setState({isDisabled:true})
        var data=  await this.forgotPassApiCall();
        this.setState({isDisabled:false})
-            if(data.responseCode !=200){
+            if(data && data.responseCode !=200){
                this.setState({
                     notificationTitle:'Some error occured',
                     notificationMessage:data.message

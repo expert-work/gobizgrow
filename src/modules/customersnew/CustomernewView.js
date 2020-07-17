@@ -25,6 +25,8 @@ import { SET_USER_INFO } from '../AppState';
 import { colors, fonts } from '../../styles';
 const saveIcon = require('../../../assets/images/save.png');
 import { SET_CUSTOMERS_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
 
 
  class CustomernewScreen extends Component {
@@ -63,35 +65,40 @@ import { SET_CUSTOMERS_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
  
 
   async  addCustomerApiCall() {
-        try {
-          console.log(this.state);
-           formData = new FormData();
-           formData.append('name',this.state.name); 
-           formData.append('email',this.state.email); 
-           formData.append('phone',this.state.phone); 
-           formData.append('street_address',this.state.street_address); 
-           formData.append('city',this.state.city); 
-           formData.append('state',this.state.state); 
-           formData.append('zip_code',this.state.zip_code); 
-           formData.append('customer_notes',this.state.customer_notes); 
-           formData.append('company_id',this.state.company_id); 
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+         formData = new FormData();
+         formData.append('name',this.state.name); 
+         formData.append('email',this.state.email); 
+         formData.append('phone',this.state.phone); 
+         formData.append('street_address',this.state.street_address); 
+         formData.append('city',this.state.city); 
+         formData.append('state',this.state.state); 
+         formData.append('zip_code',this.state.zip_code); 
+         formData.append('customer_notes',this.state.customer_notes); 
+         formData.append('company_id',this.state.company_id); 
 
-           let response = await fetch(
-            CONSTANTS.ADD_CUSTOMERS_API,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
-            }
-          );
-           let json = await response.json();
-            return json;
-        } catch (error) {
-          console.error(error);
-        }
+         let response = await fetch(
+          CONSTANTS.ADD_CUSTOMERS_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+          return json;
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error)
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    }  
   }
 
 
@@ -136,7 +143,7 @@ import { SET_CUSTOMERS_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
            var user=  await this.addCustomerApiCall();
            this.setState({isDisabled:false})
            console.log(user)
-           if(user.responseCode !=200){
+           if(user && user.responseCode !=200){
             var data=user.data
               var err='';
                   if (typeof data.email != "undefined" && typeof data.email[0] != "undefined") { err=err+' '+data.email[0];}
@@ -146,7 +153,7 @@ import { SET_CUSTOMERS_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
                     notificationMessage:err
                   })
                   this.AlertPro.open()
-            }else{
+            }else if(user) {
                this.props.customersRefersh('refresh');
                this.setState({
                     name:'',

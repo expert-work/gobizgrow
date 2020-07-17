@@ -16,7 +16,8 @@ import ForgotpasswordScreen from '../Forgotpassword/ForgotpasswordViewContainer'
 import CustomerScreen from '../customers/CustomerViewContainer';
 import CustomernewScreen from '../customersnew/CustomernewViewContainer';
 import CustomereditScreen from '../customersedit/CustomereditViewContainer';
- 
+
+import ItemScreen from '../items/ItemViewContainer';
 import ItemsTabNavigator from './ItemTabNavigator';
 import ItemnewScreen from '../itemsnew/ItemsnewViewContainer';
 import ItemeditScreen from '../itemsedit/ItemseditViewContainer';
@@ -26,6 +27,7 @@ import InvoicesScreen from './InvoiceTabNavigator';
 //import InvoicesScreen from '../invoices/InvoiceViewContainer';
 import InvoicesnewScreen from '../invoicesnew/InvoicesnewViewContainer';
 import InvoiceseditScreen from '../invoicesedit/InvoiceseditViewContainer';
+import InvoiceViewScreen from '../invoiceview/InvoiceViewViewContainer';
 
 import SelectItemsInvoiceAdd from '../invoicesnew/SelectItems';
 import SelectedItemDetailInvoice from '../invoicesnew/ItemDetail';
@@ -34,6 +36,7 @@ import EstimatesScreen from './EstimateTabNavigator';
 //import EstimatesScreen from '../estimates/EstimateViewContainer';
 
 import EstimatesnewScreen from '../estimatesnew/EstimatesnewViewContainer';
+import EstimatesViewScreen from '../estimatesView/EstimateViewViewContainer';
 import EstimateseditScreen from '../estimatesedit/EstimateseditViewContainer';
 
 
@@ -44,13 +47,14 @@ import ExpenseseditScreen from '../expensesedit/ExpenseseditViewContainer';
 import ExpenseTabnavigator from './ExpenseTabnavigator';
 import Expensecategoryedit from '../expensecategoryedit/ExpensecategoryeditViewContainer';
 import Expensecategorynew from '../expensecategorynew/ExpensecategorynewViewContainer';
+import ExpensecategoryScreen from '../expensecategories/ExpensecategoryViewContainer';
 
 
 import PaymentsScreen from '../payments/PaymentsViewContainer';
 import PaymentsnewScreen from '../paymentsnew/PaymentsnewViewContainer';
 import PaymentseditScreen from '../paymentsedit/PaymentseditViewContainer';
 
-
+import CategoryScreen from '../categories/CategoryViewContainer';
 import CategorynewScreen from '../categorynew/CategorynewViewContainer';
 import CategoryeditScreen from '../categoryedit/CategoryeditViewContainer';
 
@@ -65,6 +69,9 @@ import UniteditScreen from '../unitedit/UniteditViewContainer';
 // import AuthScreen from '../auth/AuthViewContainer';
 import ImagePicker from '../ImagePicker/ImagePicker';
 import PhotoAddScreen from '../photonew/PhotonewViewContainer';
+import PhotoUpdateScreen from '../photoupdate/PhotoupdateViewContainer';
+import SettingScreen from '../setting/SettingViewContainer';
+import Select_categoryScreen from '../select_category/Select_categoryViewContainer';
 
 import { colors, fonts } from '../../styles';
 
@@ -162,7 +169,7 @@ const StackNavigationData = [
   {
     name: 'Customers',
     component: CustomerScreen,
-    headerLeft: null,
+    headerLeft: headerLeftComponent,
     headerRight:null,
     headerShown:true,
     headerBackground: { source: headerBackground },
@@ -198,8 +205,20 @@ const StackNavigationData = [
   },
    {
     name: 'Items',
-    component: ItemsTabNavigator,
-    headerLeft: null,
+    component: ItemScreen,
+    headerLeft: headerLeftComponent,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    }
+  },
+    {
+    name: 'Select Categories',
+    component: Select_categoryScreen,
+    headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
     headerTitleStyle: {
@@ -212,7 +231,7 @@ const StackNavigationData = [
    {
     name: 'Invoices',
     component: InvoicesScreen,
-    headerLeft: null,
+    headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
     headerTitleStyle: {
@@ -245,11 +264,25 @@ const StackNavigationData = [
       fontSize: 18,
     },
   },
+  {
+    name: 'View Invoice',
+    component: InvoiceViewScreen,
+    headerLeft: headerLeftComponent,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    },
+  },
+
+
 
    {
     name: 'Estimates',
     component: EstimatesScreen,
-    headerLeft: null,
+    headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
     headerTitleStyle: {
@@ -270,6 +303,23 @@ const StackNavigationData = [
       fontSize: 18,
     },
   },
+    {
+    name: 'View Estimate',
+    component: EstimatesViewScreen,
+    headerLeft: headerLeftComponent,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    },
+  },
+
+
+  
+
+
       {
     name: 'Edit Estimate',
     component: EstimateseditScreen,
@@ -309,8 +359,8 @@ const StackNavigationData = [
   },
      {
     name: 'Expenses',
-    component: ExpenseTabnavigator,
-    headerLeft: null,
+    component: ExpensesScreen,
+    headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
     headerTitleStyle: {
@@ -319,7 +369,18 @@ const StackNavigationData = [
       fontSize: 18,
     }
   },
-
+  {
+    name: 'Item Categories',
+    component: CategoryScreen,
+    headerLeft: headerLeftComponent,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    },
+  },
   {
     name: 'Add Category',
     component: CategorynewScreen,
@@ -368,6 +429,19 @@ const StackNavigationData = [
       fontSize: 18,
     },
   },
+      {
+    name: 'Expense Categories',
+    component: ExpensecategoryScreen,
+    headerLeft: headerLeftComponent,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    }
+  },
+
   {
     name: 'Add Expense Category',
     component: Expensecategorynew,
@@ -446,7 +520,7 @@ const StackNavigationData = [
   {
     name: 'Payments',
     component: PaymentsScreen,
-    headerLeft: null,
+    headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
     headerTitleStyle: {
@@ -480,8 +554,20 @@ const StackNavigationData = [
     }
   },
    {
-    name: 'ImagePicker',
-    component: ImagePicker,
+    name: 'Setting',
+    component: SettingScreen,
+    headerLeft: headerLeftComponent,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    },
+  },
+     {
+    name: 'Add Photo',
+    component: PhotoAddScreen,
     headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
@@ -492,8 +578,8 @@ const StackNavigationData = [
     },
   },
    {
-    name: 'Add Photo',
-    component: PhotoAddScreen,
+    name: 'Update Photo',
+    component: PhotoUpdateScreen,
     headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },

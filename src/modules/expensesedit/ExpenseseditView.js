@@ -32,7 +32,8 @@ import { SET_USER_INFO } from '../AppState';
 import { colors, fonts } from '../../styles';
 const saveIcon = require('../../../assets/images/save.png');
 import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
-  
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
  let uri='';
  let uploadUrl='';
 
@@ -76,18 +77,25 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
 
 
    async  getExpensesCategories() {
-    console.log(CONSTANTS.ALL_EXPENSES_CATEGORY_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
-          try {
-            let response = await fetch(
-              CONSTANTS.ALL_EXPENSES_CATEGORY_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
-            );
-             let json = await response.json();
-             console.log(json.data);
-             return json.data;
-          } catch (error) {
-            console.error(error);
-          }
-     }
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      console.log(CONSTANTS.ALL_EXPENSES_CATEGORY_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
+      try {
+        let response = await fetch(
+          CONSTANTS.ALL_EXPENSES_CATEGORY_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
+        );
+          let json = await response.json();
+          console.log(json.data);
+          return json.data;
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+      return [];
+    }
+  }
    
 
 
@@ -97,32 +105,38 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
  
 
   async  editExpensesApiCall() {
-        try {
-          console.log(this.state);
-           formData = new FormData();
-           formData.append('expense_date',this.state.expense_date); 
-           formData.append('amount',this.state.amount); 
-           formData.append('notes',this.state.notes); 
-           formData.append('expense_category_id',this.state.expense_category_id); 
- 
-           formData.append('company_id',this.state.company_id); 
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+         formData = new FormData();
+         formData.append('expense_date',this.state.expense_date); 
+         formData.append('amount',this.state.amount); 
+         formData.append('notes',this.state.notes); 
+         formData.append('expense_category_id',this.state.expense_category_id); 
 
-           let response = await fetch(
-            CONSTANTS.ADD_EXPENSE_API,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
-            }
-          );
-           let json = await response.json();
-            return json;
-        } catch (error) {
-          console.error(error);
-        }
+         formData.append('company_id',this.state.company_id); 
+
+         let response = await fetch(
+          CONSTANTS.ADD_EXPENSE_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+          return json;
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error)
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    }
+        
   }
 
 
@@ -164,7 +178,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
            var user=  await this.editExpensesApiCall();
            this.setState({isDisabled:false})
            console.log(user)
-           if(user.responseCode !=200){
+           if(user && user.responseCode !=200){
             var data=user.data
               var err='';
                   if (typeof data.expense_date != "undefined" && typeof data.expense_date[0] != "undefined") { err=err+' please select an expense  date ';}
@@ -191,7 +205,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
           
 
         
-            }else{
+            }else if(user) {
                this.props.pageRefersh('refresh');
                this.setState({
                     name:'',

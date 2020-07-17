@@ -1,9 +1,10 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
 import { connect } from 'react-redux';
-import { SET_RIGHT_ICON_SHOW } from '../AppState';
+import { SET_RIGHT_ICON_SHOW,SET_USER_INFO } from '../AppState';
 
 import { colors, fonts } from '../../styles';
+import AsyncStorage from '@react-native-community/async-storage';
 
 const chartIcon = require('../../../assets/images/pages/chart.png');
 const calendarIcon = require('../../../assets/images/pages/calendar.png');
@@ -39,6 +40,13 @@ const logoutIcon = require('../../../assets/images/pages/logout.png');
    }
   componentWillUnmount() {
     this._unsubscribe();
+  }
+   logout = async (props) => {
+   // Alert.alert(this.props.userInfo?.name)
+      await AsyncStorage.setItem('isLogin', 'null')
+      const value = await AsyncStorage.getItem('isLogin')
+      this.props.login([])
+      this.props.navigation.navigate('Signout')
   }
 
  render() {
@@ -130,8 +138,33 @@ const logoutIcon = require('../../../assets/images/pages/logout.png');
           />
           <Text style={styles.itemText}>Payments</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.row}>
+
+         <TouchableOpacity 
+                  onPress={() => this.props.navigation.navigate('Setting')}
+         style={styles.item}>
+          <Image
+            resizeMode="contain"
+            source={settingIcon}
+            style={styles.itemImage}
+          />
+          <Text style={styles.itemText}>Setting</Text>
+        </TouchableOpacity>
       
- 
+        <TouchableOpacity 
+          onPress={() =>this.logout()}
+         style={styles.item}>
+          <Image
+            resizeMode="contain"
+            source={logoutIcon}
+            style={styles.itemImage}
+          />
+          <Text style={styles.itemText}>Logout</Text>
+        </TouchableOpacity>
+      
+
 
       </View>
 
@@ -146,7 +179,9 @@ const logoutIcon = require('../../../assets/images/pages/logout.png');
 const mapStateToProps = state => ({...state.app})
 const mapDisptachToProps = dispatch => {
   return {
-     setHeaderRightIconShow: (data) => dispatch({type: SET_RIGHT_ICON_SHOW, data})
+     setHeaderRightIconShow: (data) => dispatch({type: SET_RIGHT_ICON_SHOW, data}),
+         login: (data) => dispatch({type: SET_USER_INFO, data})
+
 
   }
 }

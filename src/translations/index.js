@@ -12,6 +12,6 @@ const { languageTag } = RNLocalize.findBestAvailableLanguage(
 
 i18n.locale = languageTag;
 i18n.fallbacks = true;
-i18n.translations = translations;
+i18n.translations = translations[languageTag];
 
 export default i18n;

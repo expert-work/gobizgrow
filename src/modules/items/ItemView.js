@@ -18,8 +18,10 @@ import CONSTANTS from '../constants';
  import SearchBar from 'react-native-search-bar';
 //import SearchBar from "react-native-dynamic-search-bar";
 import { connect } from 'react-redux';
-import { SET_EDIT_DATA,SET_RIGHT_ICON_SHOW,SET_PAGE_REFERSH } from '../AppState';
+import { SET_EDIT_DATA,SET_RIGHT_ICON_SHOW,SET_PAGE_REFERSH,SELECTED_CATEGORIES } from '../AppState';
 import { colors, fonts } from '../../styles';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
 const nextIcon = require('../../../assets/images/next.png');
 
 
@@ -42,7 +44,9 @@ const nextIcon = require('../../../assets/images/next.png');
   componentDidMount() {
        this._unsubscribe = this.props.navigation.addListener('focus', () => {
                 this.props.setHeaderRightIconShow('Add Item');
+                this.props.SET_SELECTED_CATEGORIES([]);
                 if(this.props.isPageRefersh=='refresh'){
+                  
                   this.props.pageRefersh('');
                    this.refreshData();
                  }
@@ -64,7 +68,9 @@ const nextIcon = require('../../../assets/images/next.png');
 
   editItem(data){
       this.props.editData(data);
-     this.props.navigation.navigate('Edit Item')
+       console.log(data.item_categories);
+      this.props.SET_SELECTED_CATEGORIES(data.item_categories);
+      this.props.navigation.navigate('Edit Item')
     // Alert.alert(this.props.customerEditId)
   }
 
@@ -75,34 +81,50 @@ const nextIcon = require('../../../assets/images/next.png');
     if (!this.state.fetching_from_server && !this.state.isListEnd) {
       //On click of Load More button We will call the web API again
       this.setState({ fetching_from_server: true }, () => {
-        console.log(CONSTANTS.ALL_ITEMS_API+'?page=' + this.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
-        fetch(CONSTANTS.ALL_ITEMS_API+'?page=' + this.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
-          //Sending the currect offset with get request
-          .then(response => response.json())
-          .then(responseJson => {
-            if (responseJson.data.data.length > 0) {
-              //Successful response from the API Call
-              this.offset = this.offset + 1;
-              //After the response increasing the offset for the next API call.
-              this.setState({
-                serverData: [...this.state.serverData, ...responseJson.data.data],
-                //adding the new data with old one available
-                fetching_from_server: false,
-                //updating the loading state to false
+        NetInfo.fetch().then(state => {
+          if(state.isConnected) {
+            console.log(CONSTANTS.ALL_ITEMS_API+'?page=' + this.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
+            fetch(CONSTANTS.ALL_ITEMS_API+'?page=' + this.offset+'&company_id='+this.props.userInfo.company_id+'&q='+this.state.q)
+              //Sending the currect offset with get request
+              .then(response => response.json())
+              .then(responseJson => {
+                if (responseJson.data.length > 0) {
+                  //Successful response from the API Call
+                  this.offset = this.offset + 1;
+                  //After the response increasing the offset for the next API call.
+                  this.setState({
+                    serverData: [...this.state.serverData, ...responseJson.data],
+                    //adding the new data with old one available
+                    fetching_from_server: false,
+                    //updating the loading state to false
+                  });
+                } else {
+                  this.setState({
+                    fetching_from_server: false,
+                    isListEnd: true,
+                  });
+                }
+              })
+              .catch(error => {
+                this.showErrorAlert(i18n.translations.server_connect_error);
               });
-            } else {
-              this.setState({
-                fetching_from_server: false,
-                isListEnd: true,
-              });
-            }
-          })
-          .catch(error => {
-            console.error(error);
-          });
+          } else {
+            this.showErrorAlert(i18n.translations.network_err_msg);
+          }
+        });
+        
       });
     }
   };
+
+  showErrorAlert = (message) => {
+    this.setState({
+      fetching_from_server: false,
+      isListEnd: true,
+    });
+    Alert.alert("", message)
+  }
+
   renderFooter() {
     return (
       <View style={styles.footer}>
@@ -185,6 +207,7 @@ const mapDisptachToProps = dispatch => {
     pageRefersh: (data) => dispatch({type: SET_PAGE_REFERSH, data}),
     setHeaderRightIconShow: (data) => dispatch({type: SET_RIGHT_ICON_SHOW, data}),
     editData: (data) => dispatch({type: SET_EDIT_DATA, data}),
+    SET_SELECTED_CATEGORIES: (data) => dispatch({type: SELECTED_CATEGORIES, data}),
 
   }
 }

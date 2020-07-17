@@ -25,6 +25,8 @@ import { SET_USER_INFO } from '../AppState';
 import { colors, fonts } from '../../styles';
 const saveIcon = require('../../../assets/images/save.png');
 import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
 
 
  class UniteditScreen extends Component {
@@ -57,30 +59,36 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
  
 
   async  updateUnitApiCall() {
-        try {
-          console.log(this.state);
-           formData = new FormData();
-           formData.append('name',this.state.name); 
-           formData.append('company_id',this.state.company_id); 
-           formData.append('auth_token',this.state.auth_token); 
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+         formData = new FormData();
+         formData.append('name',this.state.name); 
+         formData.append('company_id',this.state.company_id); 
+         formData.append('auth_token',this.state.auth_token); 
 
 
-           let response = await fetch(
-            CONSTANTS.UPDATE_UNIT_API+'/'+this.state.auth_token,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
-            }
-          );
-           let json = await response.json();
-            return json;
-        } catch (error) {
-          console.error(error);
-        }
+         let response = await fetch(
+          CONSTANTS.UPDATE_UNIT_API+'/'+this.state.auth_token,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+          return json;
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error)
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    }
+        
   }
 
 
@@ -101,7 +109,7 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW } from '../AppState';
            var unit=  await this.updateUnitApiCall();
            this.setState({isDisabled:false})
            console.log(unit)
-           if(unit.responseCode !=200){
+           if(unit && unit.responseCode !=200){
 
             console.log(unit)
             var data=unit.data

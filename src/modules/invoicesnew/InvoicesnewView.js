@@ -8,8 +8,7 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  Image,
-  ScrollView,
+   ScrollView,
   Alert,
   TextInput,
   TouchableOpacity,
@@ -19,10 +18,12 @@ import AlertPro from "react-native-alert-pro";
 import DatePicker from 'react-native-datepicker';
 import RNPickerSelect from 'react-native-picker-select';
 import SearchableDropdown from 'react-native-searchable-dropdown';
+import Image from 'react-native-image-progress';
 
 var width = Dimensions.get('window').width; //full width
 var height = Dimensions.get('window').height; //full height
-
+const windowWidth = Dimensions.get('window').width;
+var IMAGES_PER_ROW = 3;
 
 import CONSTANTS from '../constants';
 
@@ -33,7 +34,11 @@ import { connect } from 'react-redux';
 import { SET_USER_INFO } from '../AppState';
 import { colors, fonts } from '../../styles';
 const saveIcon = require('../../../assets/images/save.png');
-import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN,SET_EDIT_DATA,BEFORE_PHOTOS,AFTER_PHOTOS,OTHER_PHOTOS,ACTIVE_PHOTO_TAB} from '../AppState';
+import i18n from '../../translations';
+import NetInfo from "@react-native-community/netinfo";
+
+
+import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN,SET_EDIT_DATA,BEFORE_PHOTOS,AFTER_PHOTOS,OTHER_PHOTOS,ACTIVE_PHOTO_TAB,UPDATE_PHOTO_DATA} from '../AppState';
   
 
 
@@ -49,6 +54,31 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN
     // extra fields to send in the multipart payload
   }
 };
+ 
+
+
+   let  items=[
+    { name: 'TURQUOISE', code: '#1abc9c' },
+    { name: 'EMERALD', code: '#2ecc71' },
+    { name: 'PETER RIVER', code: '#3498db' },
+    { name: 'AMETHYST', code: '#9b59b6' },
+    { name: 'WET ASPHALT', code: '#34495e' },
+    { name: 'GREEN SEA', code: '#16a085' },
+    { name: 'NEPHRITIS', code: '#27ae60' },
+    { name: 'BELIZE HOLE', code: '#2980b9' },
+    { name: 'WISTERIA', code: '#8e44ad' },
+    { name: 'MIDNIGHT BLUE', code: '#2c3e50' },
+    { name: 'SUN FLOWER', code: '#f1c40f' },
+    { name: 'CARROT', code: '#e67e22' },
+    { name: 'ALIZARIN', code: '#e74c3c' },
+    { name: 'CLOUDS', code: '#ecf0f1' },
+    { name: 'CONCRETE', code: '#95a5a6' },
+    { name: 'ORANGE', code: '#f39c12' },
+    { name: 'PUMPKIN', code: '#d35400' },
+    { name: 'POMEGRANATE', code: '#c0392b' },
+    { name: 'SILVER', code: '#bdc3c7' },
+    { name: 'ASBESTOS', code: '#7f8c8d' }
+  ];
  
 
  class InvoicesnewScreen extends Component {
@@ -78,16 +108,19 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN
                 { label: '$', value: 'Fixed' },
                 { label: '%', value: 'Percentage' },
              ],
-          before_photos:[],
-          after_photos:[],
-          other_photos:[]
+          before_photos:this.props.before_photos,
+          after_photos:this.props.after_photos,
+          other_photos:this.props.other_photos
     };
    }
  
-
  
  
-
+ 
+calculatedSize(){
+  var size = windowWidth / IMAGES_PER_ROW
+  return {width: size, height: size}
+}
  async componentDidMount() {
       this.props.setItemInvoices([])
       this.props.setBackScreen('Add Invoice')
@@ -95,13 +128,23 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN
        date=today.getDate() + "/"+ parseInt(today.getMonth()+1) +"/"+ today.getFullYear();
        this.setState({'invoice_date':date,due_date:date})
 
-        this.props.set_before_photos([]);
-        this.props.set_after_photos([]);
-        this.props.set_other_photos([]);
-        this.props.set_active_photo_tab('');
+       
 
       this._unsubscribe = this.props.navigation.addListener('focus', () => {
-                this.setState({ItemInInvoice:this.props.ItemInInvoice,before_photos:this.props.before_photos,after_photos:this.props.after_photos,other_photos:this.props.other_photos })
+
+                  this.setState({ItemInInvoice:this.props.ItemInInvoice,before_photos:this.props.before_photos,after_photos:this.props.after_photos,other_photos:this.props.other_photos })
+                  console.log('statr')
+
+                  console.log('Before FOTO')
+                  console.log(this.state.before_photos)
+                  console.log('After FOTO')
+                  console.log(this.state.after_photos)
+
+                  console.log('othe FOTO')
+                  console.log(this.state.other_photos)
+                  console.log('END')
+
+
 
                 var sub_total=0;
                 this.props.ItemInInvoice.map((arr, index) => {
@@ -126,22 +169,59 @@ import { SET_PAGE_REFERSH,SET_RIGHT_ICON_SHOW,SET_ITEMS_INVOICES,SET_BACK_SCREEN
 
        var customers=  await this.getCustomers();
        this.setState({ customers:customers })
+       var uniqueIdData=  await this.getInvoiceUniqueId();
+       this.setState({ invoice_number:uniqueIdData })
+
+       
+
+
+       console.log(uniqueIdData);
+
        this.setState({company_id:this.props.userInfo.company_id})
    }
 
   async  getCustomers() {
-    console.log(CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
-          try {
-            let response = await fetch(
-              CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
-            );
-             let json = await response.json();
-                                      return json.data;
-          } catch (error) {
-            console.error(error);
-          }
-     }
-    
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      console.log(CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id);
+      try {
+        let response = await fetch(
+          CONSTANTS.ALL_CUSTOMERS_DROPDOWN_API+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
+        );
+          let json = await response.json();
+                                  return json.data;
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+      return [];
+    }
+  }    
+
+
+async getInvoiceUniqueId(){
+      let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      console.log('ABCTEST'+CONSTANTS.GET_NEXT_INVOICE_API_ID+'/?company_id='+this.props.userInfo.company_id);
+      try {
+        let response = await fetch(
+          CONSTANTS.GET_NEXT_INVOICE_API_ID+'/?company_id='+this.props.userInfo.company_id,{method: 'POST'}
+        );
+          let json = await response.json();
+                                  return json.data;
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+      return [];
+    }
+}
+
+
 
   isDecimalNumber(number){
        const re = /^[0-9]*\.?[0-9]*$/;
@@ -218,42 +298,55 @@ setDiscountType(discount_type){
      this.setState({total:sub_total-discount_val,discount_val:discount_val})
 }
 
-  async  addInvoiceApiCall() {
-        try {
-          console.log(this.state);
-           formData = new FormData();
-           formData.append('invoice_date',this.state.invoice_date); 
-           formData.append('due_date',this.state.due_date); 
-           formData.append('invoice_number',this.state.invoice_number); 
-           formData.append('sub_total',this.state.sub_total);
-           formData.append('discount',this.state.discount);
-           formData.append('discount_type',this.state.discount_type);
-           formData.append('total',this.state.total);
-           formData.append('items', JSON.stringify(this.state.ItemInInvoice));
-           formData.append('company_id',this.state.company_id); 
-           formData.append('discount_val',this.state.discount_val); 
-           formData.append('notes',this.state.notes); 
+   async  addInvoiceApiCall() {
+    let netState = await NetInfo.fetch();
+    if (netState.isConnected) {
+      try {
+        console.log(this.state);
+         formData = new FormData();
+         formData.append('invoice_date',this.state.invoice_date); 
+         formData.append('due_date',this.state.due_date); 
+         formData.append('invoice_number',this.state.invoice_number); 
+         formData.append('sub_total',this.state.sub_total);
+         formData.append('discount',this.state.discount);
+         formData.append('discount_type',this.state.discount_type);
+         formData.append('total',this.state.total);
+         formData.append('items', JSON.stringify(this.state.ItemInInvoice));
+         formData.append('company_id',this.state.company_id); 
+         formData.append('discount_val',this.state.discount_val); 
+         formData.append('notes',this.state.notes); 
+         formData.append('before_photos', JSON.stringify(this.state.before_photos));
+         formData.append('after_photos', JSON.stringify(this.state.after_photos));
+         formData.append('other_photos', JSON.stringify(this.state.other_photos));
 
 
-           formData.append('customer_id',this.state.customer_id); 
-
-           let response = await fetch(
-            CONSTANTS.ADD_INVOICE_API,
-            { 
-              headers: {
-                'Accept': 'application/json',
-                 'Content-Type': 'multipart/form-data'
-              },
-              method: 'POST',
-              body:formData
-            }
-          );
-           let json = await response.json();
-            return json;
-        } catch (error) {
-          console.error(error);
-        }
+         formData.append('customer_id',this.state.customer_id); 
+console.log(CONSTANTS.ADD_INVOICE_API)
+         let response = await fetch(
+          CONSTANTS.ADD_INVOICE_API,
+          { 
+            headers: {
+              'Accept': 'application/json',
+               'Content-Type': 'multipart/form-data'
+            },
+            method: 'POST',
+            body:formData
+          }
+        );
+         let json = await response.json();
+          return json;
+      } catch (error) {
+        Alert.alert("", i18n.translations.server_connect_error)
+      }
+    } else {
+      Alert.alert("", i18n.translations.network_err_msg)
+    }
+        
   }
+
+
+
+
 
 async selectCustomer(customer_id){ this.setState({customer_id:customer_id}) }
 
@@ -263,6 +356,12 @@ addPhotos(type){
  this.props.navigation.navigate('Add Photo')
 }
 
+
+updatePhoto(arr, type){
+  this.props.set_active_photo_tab(type) 
+  this.props.set_update_photo_data(arr)
+  this.props.navigation.navigate('Update Photo')
+}
 
 addItems(){
 this.props.navigation.navigate('Select Item')
@@ -658,13 +757,19 @@ this.props.navigation.navigate('Select Item')
 
             <View style={{padding:15,paddingTop:20}}>
               <Text style={{...styles.text}} >Before Photos</Text>
-               <View>
+
+                       <View style={styles.list}> 
                           {this.state.before_photos.map((arr, index) => {
-                          return(
-                            <View> <Text>Before Photos</Text> </View>
+                            return(
+                              <TouchableOpacity style= {styles.box} onPress={() => this.updatePhoto(arr,'before')}>
+                                    <Image source={{ uri:arr.url }}
+                                          style={styles.boxImage}
+                                        />
+                                      <Text style={styles.boxText} >{arr.notes}</Text> 
+                              </TouchableOpacity>
                             )
-                         })}
-                 </View>
+                          })}
+                       </View>
 
                 <TouchableOpacity  onPress={() => this.addPhotos('before')}  style={{justifyContent:"center",alignItems:'center',backgroundColor:'white', borderColor:colors.primaryLight,borderWidth:1, borderRadius:2,padding:10}}>
                      <Text style={{color:colors.primaryLight,fontSize:18}}>+ Add Photo</Text>
@@ -673,13 +778,19 @@ this.props.navigation.navigate('Select Item')
 
             <View style={{padding:15,paddingTop:20}}>
               <Text style={{...styles.text}} >After Photos</Text>
-                          <View> 
+                       <View style={styles.list}> 
                           {this.state.after_photos.map((arr, index) => {
                             return(
-                            <View> <Text>After Photos</Text> </View>
+                              <TouchableOpacity style= {styles.box}  onPress={() => this.updatePhoto(arr,'after')}>
+                                       <Image source={{ uri:arr.url }}
+                                          style={styles.boxImage}
+                                        />
+                                      <Text style={styles.boxText} >{arr.notes}</Text> 
+                              </TouchableOpacity>
                             )
                           })}
-                       </View>
+                       </View> 
+
                 <TouchableOpacity  onPress={() => this.addPhotos('after')}  style={{justifyContent:"center",alignItems:'center',backgroundColor:'white', borderColor:colors.primaryLight,borderWidth:1, borderRadius:2,padding:10}}>
                      <Text style={{color:colors.primaryLight,fontSize:18}}>+ Add Photo</Text>
                 </TouchableOpacity>
@@ -689,15 +800,21 @@ this.props.navigation.navigate('Select Item')
 
             <View style={{padding:15,paddingTop:20}}>
               <Text style={{...styles.text}} >Other Photos</Text>
-                   
-                     <View> 
+                       <View style={styles.list}> 
                           {this.state.other_photos.map((arr, index) => {
                             return(
-                            <View> <Text>After Photos</Text> </View>
+                              <TouchableOpacity style= {styles.box} onPress={() => this.updatePhoto(arr,'other')}>
+                                      <Image source={{ uri:arr.url }}
+                                          style={styles.boxImage}
+                                        />
+                                      <Text style={styles.boxText} >{arr.notes}</Text> 
+                              </TouchableOpacity>
                             )
                           })}
-                      </View>
+                       </View>
+ 
 
+                
                 <TouchableOpacity  onPress={() => this.addPhotos('other')}  style={{justifyContent:"center",alignItems:'center',backgroundColor:'white', borderColor:colors.primaryLight,borderWidth:1, borderRadius:2,padding:10}}>
                      <Text style={{color:colors.primaryLight,fontSize:18}}>+ Add Photo</Text>
                 </TouchableOpacity>
@@ -747,6 +864,8 @@ this.props.navigation.navigate('Select Item')
             }
           }}
         />
+
+
       </ScrollView>
     );
   }
@@ -766,7 +885,8 @@ const mapDisptachToProps = dispatch => {
     set_before_photos: (data) => dispatch({type: BEFORE_PHOTOS, data}),
     set_after_photos: (data) => dispatch({type: AFTER_PHOTOS, data}),
     set_other_photos: (data) => dispatch({type: OTHER_PHOTOS, data}),
-    set_active_photo_tab: (data) => dispatch({type: ACTIVE_PHOTO_TAB, data})
+    set_active_photo_tab: (data) => dispatch({type: ACTIVE_PHOTO_TAB, data}),
+    set_update_photo_data: (data) => dispatch({type: UPDATE_PHOTO_DATA, data}),
 
   }
 }
@@ -839,12 +959,69 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems:'center'
 },
+  images: {
+    width: 100,
+    height: 100,
+     borderColor: colors.primary,
+    borderWidth: 1,
+    marginHorizontal: 3
+  },
+
   footer: {
     padding: 10,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
   },
+
+   gridView: {
+    marginTop: 10,
+    flex: 1,
+  },
+  itemContainer: {
+    justifyContent: 'flex-end',
+    borderRadius: 5,
+    padding: 10,
+   },
+  itemName: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  itemCode: {
+    fontWeight: '600',
+    fontSize: 12,
+    color: '#fff',
+  },
+boxImage: { 
+    flex: 1, 
+    width: 150, 
+    height: 150,
+},
+box: {
+      width: 150,
+      backgroundColor: '#00000003',
+      height: 150,
+      alignItems: 'stretch',
+      margin: 3
+}, 
+boxText: {
+      flex: 1,
+      fontWeight: '900',
+      fontSize: 15,
+      color: 'white',
+      position: 'absolute',
+      bottom: 5,
+      right: 5,
+      backgroundColor: 'rgba(0,0,0,0)'
+},
+list: {
+       flex: 1,
+       flexDirection: 'row',
+       flexWrap: 'wrap',
+       justifyContent: 'center'
+  },
+ 
 });
 
 

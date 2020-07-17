@@ -804,6 +804,7 @@ color foreground_material_dark
 color foreground_material_light
 color highlighted_text_material_dark
 color highlighted_text_material_light
+color iconBackground
 color material_blue_grey_800
 color material_blue_grey_900
 color material_blue_grey_950
@@ -1318,6 +1319,7 @@ drawable abc_vector_test
 drawable assets_dummy
 drawable assets_galeryimages
 drawable assets_images_background
+drawable assets_images_cross
 drawable assets_images_drawer_calculator
 drawable assets_images_drawer_calendar
 drawable assets_images_drawer_components
@@ -1334,6 +1336,8 @@ drawable assets_images_drawer_settings
 drawable assets_images_drawer_star
 drawable assets_images_drawer_user
 drawable assets_images_drawer_users
+drawable assets_images_edit
+drawable assets_images_eye
 drawable assets_images_icons_arrowback
 drawable assets_images_next
 drawable assets_images_pages_banknotes
@@ -1889,10 +1893,13 @@ layout text_view_with_line_height_from_layout
 layout text_view_with_line_height_from_style
 layout text_view_with_theme_line_height
 layout text_view_without_line_height
+mipmap ic_foreground
 mipmap ic_launcher
 mipmap ic_launcher_round
 plurals mtrl_badge_content_description
 raw app
+raw src_translations_en
+raw src_translations_ru
 string abc_action_bar_home_description
 string abc_action_bar_up_description
 string abc_action_menu_overflow_description
@@ -2860,6 +2867,7 @@ styleable View android_theme android_focusable paddingEnd paddingStart theme
 styleable ViewBackgroundHelper android_background backgroundTint backgroundTintMode
 styleable ViewPager2 android_orientation
 styleable ViewStubCompat android_id android_layout android_inflatedId
+xml file_provider_paths
 xml provider_paths
 xml rn_dev_preferences
 xml standalone_badge

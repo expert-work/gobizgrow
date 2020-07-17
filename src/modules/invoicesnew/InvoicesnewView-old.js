@@ -221,7 +221,7 @@ var items = [
           
 
         
-            }else{
+            }else if(user) {
                this.props.pageRefersh('refresh');
                this.setState({
                     name:'',

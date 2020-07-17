@@ -20,6 +20,7 @@ import InvoicesScreen from './InvoiceTabNavigator';
 //import InvoicesScreen from '../invoices/InvoiceViewContainer';
 import InvoicesnewScreen from '../invoicesnew/InvoicesnewViewContainer';
 import InvoiceseditScreen from '../invoicesedit/InvoiceseditViewContainer';
+import InvoiceViewScreen from '../invoiceview/InvoiceViewViewContainer';
 
 import SelectItemsInvoiceAdd from '../invoicesnew/SelectItems';
 import SelectedItemDetailInvoice from '../invoicesnew/ItemDetail';
@@ -30,23 +31,26 @@ import EstimatesScreen from './EstimateTabNavigator';
 import EstimatesnewScreen from '../estimatesnew/EstimatesnewViewContainer';
 import EstimateseditScreen from '../estimatesedit/EstimateseditViewContainer';
 
+import EstimatesViewScreen from '../estimatesView/EstimateViewViewContainer';
 
 
 
 import ExpensesScreen from '../expenses/ExpenseViewContainer';
 import ExpenseTabnavigator from './ExpenseTabnavigator';
+import ExpensecategoryScreen from '../expensecategories/ExpensecategoryViewContainer';
 import Expensecategoryedit from '../expensecategoryedit/ExpensecategoryeditViewContainer';
 import Expensecategorynew from '../expensecategorynew/ExpensecategorynewViewContainer';
 import ExpensesnewScreen from '../expensesnew/ExpensesnewViewContainer';
 import ExpenseseditScreen from '../expensesedit/ExpenseseditViewContainer';
 
- 
+ import ItemScreen from '../items/ItemViewContainer';
 import ItemsTabNavigator from './ItemTabNavigator';
 import ItemnewScreen from '../itemsnew/ItemsnewViewContainer';
 import ItemeditScreen from '../itemsedit/ItemseditViewContainer';
+import Select_categoryScreen from '../select_category/Select_categoryViewContainer';
 
 
-
+import CategoryScreen from '../categories/CategoryViewContainer';
 import CategorynewScreen from '../categorynew/CategorynewViewContainer';
 import CategoryeditScreen from '../categoryedit/CategoryeditViewContainer';
 
@@ -61,10 +65,11 @@ import PaymentsnewScreen from '../paymentsnew/PaymentsnewViewContainer';
 import PaymentseditScreen from '../paymentsedit/PaymentseditViewContainer';
 
 
-import ImagePicker from '../ImagePicker/ImagePicker';
+import SettingScreen from '../setting/SettingViewContainer';
 
 import PhotoAddScreen from '../photonew/PhotonewViewContainer';
-  
+import PhotoUpdateScreen from '../photoupdate/PhotoupdateViewContainer';
+ 
 
 
 // import ProfileScreen from '../profile/ProfileViewContainer';
@@ -207,7 +212,7 @@ const StackNavigationDataAuth = [
    {
     name: 'Customers',
     component: CustomerScreen,
-    headerLeft: null,
+    headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
     headerTitleStyle: {
@@ -242,9 +247,21 @@ const StackNavigationDataAuth = [
   },
    {
     name: 'Items',
-    component: ItemsTabNavigator,
-    headerLeft: null,
+    component: ItemScreen,
+    headerLeft: headerLeftComponent,
     headerRight:headerRightComponentMenu,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    },
+  },
+    {
+    name: 'Item Categories',
+    component: CategoryScreen,
+    headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
     headerTitleStyle: {
@@ -303,8 +320,8 @@ const StackNavigationDataAuth = [
   },
      {
     name: 'Expenses',
-    component: ExpenseTabnavigator,
-    headerLeft: null,
+    component: ExpensesScreen,
+    headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
     headerTitleStyle: {
@@ -313,6 +330,19 @@ const StackNavigationDataAuth = [
       fontSize: 18,
     }
   },
+     {
+    name: 'Expense Categories',
+    component: ExpensecategoryScreen,
+    headerLeft: headerLeftComponent,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    }
+  },
+
    {
     name: 'Add Expense Category',
     component: Expensecategorynew,
@@ -388,6 +418,20 @@ const StackNavigationDataAuth = [
       fontSize: 18,
     }
   },
+     {
+    name: 'Select Categories',
+    component: Select_categoryScreen,
+    headerLeft: headerLeftComponent,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    }
+  },
+
+
   {
     name: 'Payments',
     component: PaymentsScreen,
@@ -427,7 +471,7 @@ const StackNavigationDataAuth = [
    {
     name: 'Invoices',
     component: InvoicesScreen,
-    headerLeft: null,
+    headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
     headerTitleStyle: {
@@ -460,11 +504,23 @@ const StackNavigationDataAuth = [
       fontSize: 18,
     },
   },
+  {
+    name: 'View Invoice',
+    component: InvoiceViewScreen,
+    headerLeft: headerLeftComponent,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    },
+  },
 
    {
     name: 'Estimates',
     component: EstimatesScreen,
-    headerLeft: null,
+    headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
     headerTitleStyle: {
@@ -473,6 +529,19 @@ const StackNavigationDataAuth = [
       fontSize: 18,
     }
   },
+      {
+    name: 'View Estimate',
+    component: EstimatesViewScreen,
+    headerLeft: headerLeftComponent,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    },
+  },
+
     {
     name: 'Add Estimate',
     component: EstimatesnewScreen,
@@ -524,8 +593,8 @@ const StackNavigationDataAuth = [
     },
   },
    {
-    name: 'ImagePicker',
-    component: ImagePicker,
+    name: 'Setting',
+    component: SettingScreen,
     headerLeft: headerLeftComponent,
     headerShown:true,
     headerBackground: { source: headerBackground },
@@ -548,7 +617,21 @@ const StackNavigationDataAuth = [
       fontSize: 18,
     },
   },
+  
+   {
+    name: 'Update Photo',
+    component: PhotoUpdateScreen,
+    headerLeft: headerLeftComponent,
+    headerShown:true,
+    headerBackground: { source: headerBackground },
+    headerTitleStyle: {
+      fontFamily: fonts.primaryRegular,
+      color: colors.white,
+      fontSize: 18,
+    },
+  },
 
+ 
 ]
 
 export default StackNavigationDataAuth;

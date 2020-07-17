@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "/Users/ashishkumarmishra/Desktop/Archive/android/app/build/intermediates/incremental/mergeReleaseResources/merged.dir/values-v23/values-v23.xml",
+            "outputFile": "/Users/ashishkumarmishra/Desktop/gobizgrow/android/app/build/intermediates/incremental/mergeReleaseResources/merged.dir/values-v23/values-v23.xml",
             "map": [
                 {
                     "source": "/Users/ashishkumarmishra/.gradle/caches/transforms-2/files-2.1/73eaf6eeb915b1337a6e19a541b0e997/res/values-v23/values-v23.xml",

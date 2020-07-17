@@ -185,6 +185,19 @@ class CustomDrawerContent extends React.Component {
           </View>
         )}
         onPress={() => this.props.navigation.navigate('Expenses')}
+      />      
+
+      <DrawerItem
+        label={() => (
+          <View style={styles.menuLabelFlex}>
+            <Image
+              style={{ width: 20, height: 20}}
+              source={iconSettings} 
+            />
+            <Text style={styles.menuTitle}>Setting</Text>
+          </View>
+        )}
+        onPress={() => this.props.navigation.navigate('Setting')}
       />
 
       <DrawerItem

@@ -18,6 +18,10 @@ const blueVersion = {
   black: '#000000',
   green: '#6DD0A3',
   yellow: '#ffc247',
+  DRAFT:'#FF1358', 
+SENT:'#5A81F7', 
+ACCEPTED:'#6DD0A3', 
+REJECTED:'red', 
 };
 
 export default blueVersion;
